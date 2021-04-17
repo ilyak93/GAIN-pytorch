@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-#
-# Author:   Kazuto Nakashima
-# URL:      http://kazuto1011.github.io
-# Created:  2017-05-26
 
 from collections import Sequence
 
@@ -100,7 +94,7 @@ class Deconvnet(BackPropagation):
             self.handlers.append(module[1].register_backward_hook(backward_hook))
 
 
-class GradCAM(_BaseWrapper):
+class Grad_CAM(_BaseWrapper):
     """
     "Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization"
     https://arxiv.org/pdf/1610.02391.pdf
@@ -108,7 +102,7 @@ class GradCAM(_BaseWrapper):
     """
 
     def __init__(self, model, candidate_layers=None):
-        super(GradCAM, self).__init__(model)
+        super(Grad_CAM, self).__init__(model)
         self.fmap_pool = {}
         self.grad_pool = {}
         self.candidate_layers = candidate_layers  # list

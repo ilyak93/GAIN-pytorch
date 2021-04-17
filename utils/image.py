@@ -20,17 +20,17 @@ def preprocess_image(img: np.ndarray, mean=None, std=None) -> torch.Tensor:
 
 def deprocess_image(img):
     """ see https://github.com/jacobgil/keras-grad-cam/blob/master/grad-cam.py#L65 """
-    img = img - np.mean(img)
-    img = img / (np.std(img) + 1e-5)
-    img = img * 0.1
-    img = img + 0.5
-    img = np.clip(img, 0, 1)
+    img = img - np.min(img)
+    img = img / np.max(img)
+
     return np.uint8(img * 255)
 
 
-def show_cam_on_image(img: np.ndarray, mask: np.ndarray) -> np.ndarray:
-    heatmap = cv2.applyColorMap(np.uint8(255 * mask), cv2.COLORMAP_JET)
-    heatmap = np.float32(heatmap) / 255
-    cam = heatmap + np.float32(img)
+def show_cam_on_image(img: np.ndarray, mask: np.ndarray, without_norm : bool) -> np.ndarray:
+    heatmap = cv2.applyColorMap(np.uint8(mask), cv2.COLORMAP_JET)
+    heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
+    if without_norm != True:
+        heatmap = np.float32(heatmap) / 255
+    cam = 0.5 * heatmap + 0.5 * np.float32(img)
     cam = cam / np.max(cam)
-    return np.uint8(255 * cam)
+    return np.uint8(255 * cam), heatmap

@@ -174,7 +174,7 @@ class PascalVOCLoader(data.Dataset):
             'label/idx': class_idx,
             'label/onehot': class_onehot
         }
-        '''
+        """
         # apply augmentations
         if (self.augmentations is not None):
             out = self.augmentations(out)
@@ -214,7 +214,7 @@ class PascalVOCLoader(data.Dataset):
         out['image'] = torch.from_numpy(np.array(image)).type(torch.float)
         out['label/truths'] = [torch.from_numpy(t).type(torch.float) for t in truths]
         out['label/masks'] = [torch.from_numpy(t).type(torch.float) for t in masks]
-        '''
+        """
 
         return out
 

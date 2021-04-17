@@ -16,7 +16,7 @@ class RawDataset:
                  num_workers=1,
                  output_dims=224,
                  output_channels=3,
-                 shuffle=True,
+                 shuffle=False,
                  batch_size_dict=None):
         self.name = os.path.basename(os.path.normpath(root_dir))
         self.output_dims = output_dims
@@ -51,11 +51,11 @@ class RawDataset:
         train_loader = torch.utils.data.DataLoader(
             self.dataset,
             batch_size=self.batch_size['train'],
-            num_workers=self.num_workers,
+            num_workers=0,
             sampler=train_sampler)
         validation_loader = torch.utils.data.DataLoader(
             self.dataset,
-            num_workers=self.num_workers,
+            num_workers=0,
             batch_size=self.batch_size['test'],
             sampler=valid_sampler)
 

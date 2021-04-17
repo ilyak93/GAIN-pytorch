@@ -174,7 +174,7 @@ class PascalVOCLoader(data.Dataset):
             'label/idx': class_idx,
             'label/onehot': class_onehot
         }
-
+        '''
         # apply augmentations
         if (self.augmentations is not None):
             out = self.augmentations(out)
@@ -214,6 +214,7 @@ class PascalVOCLoader(data.Dataset):
         out['image'] = torch.from_numpy(np.array(image)).type(torch.float)
         out['label/truths'] = [torch.from_numpy(t).type(torch.float) for t in truths]
         out['label/masks'] = [torch.from_numpy(t).type(torch.float) for t in masks]
+        '''
 
         return out
 
@@ -324,11 +325,12 @@ class PascalVOCLoader(data.Dataset):
 
         pre_encoded = glob.glob(pjoin(target_path, "*.png"))
 
-        if len(pre_encoded) != 9733:
+        #if len(pre_encoded) != 9733:
+        if len(pre_encoded) != 8498:
             print("Pre-encoding segmentation masks...")
             for ii in tqdm(sbd_train_list):
                 lbl_path = pjoin(sbd_path, "dataset/cls", ii + ".mat")
-                data = io.loadmat(lbl_path)
+                data = scipy.io.loadmat(lbl_path)
                 lbl = data["GTcls"][0]["Segmentation"][0].astype(np.int32)
                 lbl = m.toimage(lbl, high=lbl.max(), low=lbl.min())
                 m.imsave(pjoin(target_path, ii + ".png"), lbl)

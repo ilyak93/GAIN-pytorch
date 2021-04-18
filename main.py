@@ -1,6 +1,7 @@
 import PIL.Image
 import pathlib
 import torch
+import torchvision
 from torch import nn
 from torchvision.models import vgg19
 import numpy as np
@@ -11,6 +12,7 @@ from utils.image import show_cam_on_image, preprocess_image, deprocess_image
 
 from models.gcam import GCAM
 from PIL import Image
+
 
 
 
@@ -98,7 +100,6 @@ def main():
 
     #gcam = Grad_CAM(model=model)
 
-
     gcam = GCAM(model=model, grad_layer = 'features', num_classes=20)
 
     total_train_loss = []
@@ -122,9 +123,9 @@ def main():
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
 
         model.train(True)
-        for i in range(len(rds.datasets['train'])):
-            sample = rds.datasets['train'].dataset[i]
-            input_tensor = preprocess_image(sample['image'], mean=mean, std=std).to(device)
+        i = 0
+        for sample in rds.datasets['train']:
+            input_tensor = preprocess_image(sample['image'].squeeze().numpy(), mean=mean, std=std).to(device)
             #input_tensor2 = torch.from_numpy(sample['image'].copy()).unsqueeze(0).permute([0, 3, 1, 2]).to(device).float()
             #np_im2 = input_tensor.squeeze().permute(1, 2, 0).cpu()
             label_idx_list = sample['label/idx']
@@ -182,8 +183,6 @@ def main():
 
             optimizer.step()
 
-
-
             if i % 100 == 0:
                 print(i)
                 print('Loss per image: {:.3f}'.format(loss.detach().item()))
@@ -207,7 +206,7 @@ def main():
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
-                img = sample['image']
+                img = sample['image'].squeeze().numpy()
                 img_orig = Image.fromarray(img)
                 img_orig.save(dir_path + '/' + 'orig.jpg')
 
@@ -237,6 +236,7 @@ def main():
                     plt.plot(mean_train_accuracy)
                     plt.savefig(epoch_path + '/train_accuracy.jpg')
                     plt.close()
+            i+=1
 
 
         total_train_loss.append(sum(train_epoch_loss)/len(train_epoch_loss))
@@ -252,9 +252,9 @@ def main():
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
 
         model.train(False)
-        for i in range(len(rds.datasets['test'])):
-            sample = rds.datasets['test'].dataset[i]
-            input_tensor = preprocess_image(sample['image'], mean=mean, std=std).to(device)
+        i = 0
+        for sample in rds.datasets['test']:
+            input_tensor = preprocess_image(sample['image'].squeeze().numpy(), mean=mean, std=std).to(device)
             # input_tensor2 = torch.from_numpy(sample['image'].copy()).unsqueeze(0).permute([0, 3, 1, 2]).to(device).float()
             # np_im2 = input_tensor.squeeze().permute(1, 2, 0).cpu()
             label_idx_list = sample['label/idx']
@@ -328,7 +328,7 @@ def main():
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
-                img = sample['image']
+                img = sample['image'].squeeze().numpy()
                 img_orig = Image.fromarray(img)
                 img_orig.save(dir_path + '/' + 'orig.jpg')
 
@@ -357,6 +357,7 @@ def main():
                     plt.plot(mean_test_accuracy)
                     plt.savefig(epoch_path + '/test_accuracy.jpg')
                     plt.close()
+            i+=1
 
         total_test_loss.append(sum(test_epoch_loss) / len(test_epoch_loss))
         plt.plot(total_test_loss)
@@ -369,5 +370,8 @@ def main():
 
 
 if __name__ == '__main__':
+    #d1 = torchvision.datasets.VOCSegmentation('./', download=True, image_set='train')
+    #d2 = torchvision.datasets.VOCSegmentation('./', download=True, image_set='val')
+    #d3 = torchvision.datasets.VOCSegmentation('./', download=True, image_set='trainval')
     main()
     print()

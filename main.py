@@ -1,5 +1,4 @@
 import PIL.Image
-import cv2
 import pathlib
 import torch
 from torch import nn
@@ -7,20 +6,15 @@ from torchvision.models import vgg19
 import numpy as np
 import matplotlib.pyplot as plt
 
-import data
-import gpu_profile
-from GradCAM import GradCAM
-from grad_cam import Grad_CAM
+from dataloaders import data
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image
 
 from models.gcam import GCAM
 from PIL import Image
-import os
 
-import sys
-from gpu_profile import gpu_profile
 
-import matplotlib.cm as cm
+
+
 
 
 def main():
@@ -176,6 +170,7 @@ def main():
             optimizer.zero_grad()
 
             labels = torch.Tensor(label_idx_list).to(device).long()
+
             logits, heatmap = gcam(input_tensor, labels)
 
             indices = torch.Tensor(label_idx_list).long().to(device)
@@ -266,6 +261,7 @@ def main():
             num_of_labels = len(label_idx_list)
 
             """
+            #this code used for initial experiments  GCAM visualization
             print(i)
             if i % 100 == 0 :
                 img = sample['image']

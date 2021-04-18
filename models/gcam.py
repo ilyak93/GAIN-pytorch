@@ -2,18 +2,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from cnn_finetune import make_model
 
 
 class GCAM(nn.Module):
-    def __init__(self, grad_layer, num_classes):
+    def __init__(self, model, grad_layer, num_classes):
         super(GCAM, self).__init__()
 
-        self.model = make_model(
-            model_name='resnet50',
-            pretrained=True,
-            num_classes=num_classes
-        )
+        self.model = model
 
         # print(self.model)
         self.grad_layer = grad_layer
@@ -33,8 +28,8 @@ class GCAM(nn.Module):
         self.omega = 100
 
     def _register_hooks(self, grad_layer):
-        def forward_hook(module, grad_input, grad_output):
-            self.feed_forward_features = grad_output
+        def forward_hook(module, input, output):
+            self.feed_forward_features = output
 
         def backward_hook(module, grad_input, grad_output):
             self.backward_features = grad_output[0]
@@ -54,18 +49,13 @@ class GCAM(nn.Module):
             raise AttributeError('Gradient layer %s not found in the internal model' % grad_layer)
 
     def _to_ohe(self, labels):
-        ohe = torch.zeros((labels.size(0), self.num_classes), requires_grad=True)
-        for i, label in enumerate(labels):
-            ohe[i, label] = 1
 
+        ohe = torch.nn.functional.one_hot(labels, self.num_classes).sum(dim=0).unsqueeze(0).float()
         ohe = torch.autograd.Variable(ohe)
 
         return ohe
 
-    def forward(self, images, labels):
-
-        # Remember, only do back-probagation during the training. During the validation, it will be affected by bachnorm
-        # dropout, etc. It leads to unstable validation score. It is better to visualize attention maps at the testset
+    def forward(self, images, labels): #TODO: no need for saving the hook results
 
         # Remember, only do back-probagation during the training. During the validation, it will be affected by bachnorm
         # dropout, etc. It leads to unstable validation score. It is better to visualize attention maps at the testset
@@ -78,7 +68,7 @@ class GCAM(nn.Module):
 
             _, _, img_h, img_w = images.size()
 
-            self.model.train(True)
+            self.model.train(True) #TODO: use is_train
             logits = self.model(images)  # BS x num_classes
             self.model.zero_grad()
 
@@ -88,12 +78,12 @@ class GCAM(nn.Module):
             else:
                 labels_ohe = self._to_ohe(labels).cuda()
 
-            gradient = logits * labels_ohe
+            #gradient = logits * labels_ohe
             grad_logits = (logits * labels_ohe).sum()  # BS x num_classes
-            grad_logits.backward(gradient=gradient, retain_graph=True)
+            grad_logits.backward(retain_graph=True)
             self.model.zero_grad()
 
-        if is_train:
+        if is_train: #TODO: check this
             self.model.train(True)
         else:
             self.model.train(False)

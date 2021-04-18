@@ -1,0 +1,88 @@
+import PIL.Image
+import cv2
+import torch
+from torchvision.models import resnet50
+import numpy as np
+import matplotlib.pyplot as plt
+
+import data
+from GradCAM import GradCAM
+from grad_cam import Grad_CAM
+from utils.image import show_cam_on_image
+
+device = torch.device('cuda:0')
+
+model = resnet50(pretrained=True).to(device)
+target_layer = model.layer4[-1]
+
+pl_im = PIL.Image.open('C:/VOC-dataset/VOCdevkit/VOC2012/JPEGImages/2007_000032.jpg')
+np_im = np.array(pl_im) / 255
+plt.imshow(np_im)
+plt.show()
+input_tensor = torch.from_numpy(np_im).to(device)# Create an input tensor image for your model..
+input_tensor = input_tensor.permute([2,0,1]).unsqueeze(0).float()
+
+cam = GradCAM(model=model, target_layer=target_layer, use_cuda=True)
+grayscale_cam = cam(input_tensor=input_tensor, target_category=1)
+heatmap = cv2.applyColorMap(np.uint8(255 * grayscale_cam), cv2.COLORMAP_JET)
+
+plt.imshow(heatmap)
+plt.show()
+visualization = show_cam_on_image(np_im, grayscale_cam)
+plt.imshow(visualization)
+plt.show()
+
+target_class = 1
+
+gcam = Grad_CAM(model=model)
+probs, ids = gcam.forward(input_tensor)
+ids_ = torch.LongTensor([[target_class]] * len(input_tensor)).to(device)
+gcam.backward(ids=ids_)
+regions = gcam.generate(target_layer='layer4')
+regions_cpu = regions.squeeze().cpu()
+heatmap = cv2.applyColorMap(np.uint8(255 * regions_cpu), cv2.COLORMAP_JET)
+heatmap = np.float32(heatmap) / 255
+plt.imshow(heatmap)
+plt.show()
+visualization = show_cam_on_image(np_im, regions.squeeze().cpu())
+plt.imshow(visualization)
+plt.show()
+print()
+
+dataset_path = 'C:/VOC-dataset'
+input_dims = [224, 224]
+batch_size_dict = {'train': 1, 'test': 1}
+
+rds = data.RawDataset(root_dir=dataset_path,
+                      num_workers=0,
+                      output_dims=input_dims,
+                      batch_size_dict=batch_size_dict)
+
+epochs = 1
+
+for i in range(epochs):
+    itr = 0
+    for sample in rds.datasets['train']:
+        input_tensor = sample['image'].to(device)
+        label_idx_list = sample['label/idx']
+        if itr % 100 == 0 :
+            for label_idx in label_idx_list:
+                label = label_idx[0]
+                gcam = Grad_CAM(model=model)
+                probs, ids = gcam.forward(input_tensor)
+                ids_ = torch.LongTensor([[label_idx]] * len(input_tensor)).to(device)
+                gcam.backward(ids=ids_)
+                regions = gcam.generate(target_layer='layer4')
+                regions_cpu = regions.squeeze().cpu()
+                heatmap = cv2.applyColorMap(np.uint8(255 * regions_cpu), cv2.COLORMAP_JET)
+                heatmap = np.float32(heatmap) / 255
+                img = sample['image'][0, :, : ,:].permute([1,2,0]).cpu()
+                plt.imshow(img)
+                plt.show()
+                plt.imshow(heatmap)
+                plt.show()
+                visualization = show_cam_on_image(img, heatmap)
+                plt.imshow(visualization)
+                plt.show()
+                print()
+

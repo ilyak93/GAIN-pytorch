@@ -1,10 +1,8 @@
-import cv2
 import numpy as np
 import os
 import torch
-import random
 from torch.utils.data import Dataset
-from pascal_voc_loader import PascalVOCLoader
+from dataloaders.pascal_voc_loader import PascalVOCLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 
 

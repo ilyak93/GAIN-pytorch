@@ -55,7 +55,7 @@ class GCAM(nn.Module):
 
         return ohe
 
-    def forward(self, images, labels): #TODO: no need for saving the hook results
+    def forward(self, images, labels): #TODO: no need for saving the hook results ; Put Nan
 
         # Remember, only do back-probagation during the training. During the validation, it will be affected by bachnorm
         # dropout, etc. It leads to unstable validation score. It is better to visualize attention maps at the testset

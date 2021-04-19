@@ -3,7 +3,7 @@ import pathlib
 import torch
 import torchvision
 from torch import nn
-from torchvision.models import vgg19
+from torchvision.models import vgg19, wide_resnet101_2, mobilenet_v2
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -31,6 +31,8 @@ def main():
     device = torch.device('cuda:0')
 
     model = vgg19(pretrained=True).train().to(device)
+
+    #model = mobilenet_v2(pretrained=True).train().to(device)
 
     #change the last layer for finetuning
     classifier = model.classifier
@@ -100,7 +102,7 @@ def main():
 
     #gcam = Grad_CAM(model=model)
 
-    gcam = GCAM(model=model, grad_layer = 'features', num_classes=20)
+    gcam = GCAM(model=model, grad_layer='features', num_classes=20)
 
     total_train_loss = []
     total_train_accuracy = []
@@ -200,9 +202,14 @@ def main():
                     mean_train_accuracy.append(sum(train_accuracy) / len(train_accuracy))
                     print('Average accuracy: {:.3f}'.format(sum(train_accuracy) / len(train_accuracy)))
 
+                _, y_pred = logits.detach().topk(num_of_labels)
+                y_pred = y_pred.view(-1)
+                gt, _ = y_pred.sort(descending=True)
+
+                predicted_categories = [categories[x] for x in gt]
 
                 labels = [categories[label_idx] for label_idx in label_idx_list]
-                dir_name = str(i)+'_'+'_'.join(labels) +'_loss_'+str(loss.detach().item())
+                dir_name = str(i)+'_labels_'+'_'.join(labels)+'_predicted_'+'_'.join(predicted_categories) +'_loss_'+str(loss.detach().item())
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
@@ -323,8 +330,15 @@ def main():
                     mean_test_accuracy.append(sum(test_accuracy) / len(test_accuracy))
                     print('Average accuracy: {:.3f}'.format(sum(test_accuracy) / len(test_accuracy)))
 
+                _, y_pred = logits.detach().topk(num_of_labels)
+                y_pred = y_pred.view(-1)
+                gt, _ = y_pred.sort(descending=True)
+
+                predicted_categories = [categories[x] for x in gt]
+
                 labels = [categories[label_idx] for label_idx in label_idx_list]
-                dir_name = str(i) + '_' + '_'.join(labels) + '_loss_' + str(loss.detach().item())
+                dir_name = str(i) + '_labels_' + '_'.join(labels) + '_predicted_' + '_'.join(
+                    predicted_categories) + '_loss_' + str(loss.detach().item())
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
@@ -370,8 +384,5 @@ def main():
 
 
 if __name__ == '__main__':
-    #d1 = torchvision.datasets.VOCSegmentation('./', download=True, image_set='train')
-    #d2 = torchvision.datasets.VOCSegmentation('./', download=True, image_set='val')
-    #d3 = torchvision.datasets.VOCSegmentation('./', download=True, image_set='trainval')
     main()
     print()

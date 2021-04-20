@@ -69,7 +69,7 @@ def main():
     epochs = 15
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-    # gcam = GCAM(model=model, grad_layer='features', num_classes=20)
+    gcam = GCAM(model=model, grad_layer='features', num_classes=20)
     total_train_loss = []
     total_train_accuracy = []
     total_test_loss = []
@@ -81,7 +81,7 @@ def main():
     epoch_test_multi_accuracy = []
 
 
-    viz_path = 'C:/Users/Student2/PycharmProjects/GCAM/exp1'
+    viz_path = 'C:/Users/Student2/PycharmProjects/GCAM/exp2'
     pathlib.Path(viz_path).mkdir(parents=True, exist_ok=True)
 
     for epoch in range(epochs):
@@ -104,7 +104,7 @@ def main():
         mean_test_multi_accuracy = []
 
 
-        train_path = 'C:/Users/Student2/PycharmProjects/GCAM/exp1/train'
+        train_path = 'C:/Users/Student2/PycharmProjects/GCAM/exp2/train'
         pathlib.Path(train_path).mkdir(parents=True, exist_ok=True)
         epoch_path = train_path+'/epoch_'+str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -118,8 +118,8 @@ def main():
             optimizer.zero_grad()
             labels = torch.Tensor(label_idx_list).to(device).long()
 
-            logits = model(input_tensor)
-            # logits, heatmap = gcam(input_tensor, labels)
+            logits, heatmap = gcam(input_tensor, labels)
+
             indices = torch.Tensor(label_idx_list).long().to(device)
             class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
 
@@ -172,14 +172,14 @@ def main():
                 img_orig = Image.fromarray(img)
                 img_orig.save(dir_path + '/' + 'orig.jpg')
 
-                # htm = heatmap.squeeze().cpu().detach().numpy()
+                htm = heatmap.squeeze().cpu().detach().numpy()
                 #plt.imshow(htm)
                 #plt.show()
 
-                # htm = deprocess_image(htm)
-                # visualization, heatmap = show_cam_on_image(img, htm, True)
-                # visualization_m = Image.fromarray(visualization)
-                # visualization_m.save(dir_path+'/'+'vis.jpg')
+                htm = deprocess_image(htm)
+                visualization, heatmap = show_cam_on_image(img, htm, True)
+                visualization_m = Image.fromarray(visualization)
+                visualization_m.save(dir_path+'/'+'vis.jpg')
                 #plt.imshow(visualization)
                 #plt.show()
                 #plt.imshow(heatmap)
@@ -211,7 +211,7 @@ def main():
         plt.plot(total_train_loss)
         plt.savefig(viz_path + '/total_train_accuracy.jpg')
 
-        test_path = 'C:/Users/Student2/PycharmProjects/GCAM/exp1/test'
+        test_path = 'C:/Users/Student2/PycharmProjects/GCAM/exp2/test'
         pathlib.Path(test_path).mkdir(parents=True, exist_ok=True)
         epoch_path = test_path + '/epoch_' + str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -223,7 +223,8 @@ def main():
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
             labels = torch.Tensor(label_idx_list).to(device).long()
-            logits = model(input_tensor)
+            logits, heatmap = gcam(input_tensor, labels)
+
             indices = torch.Tensor(label_idx_list).long().to(device)
             class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
             loss = loss_fn(logits, class_onehot)
@@ -275,14 +276,14 @@ def main():
                 img_orig = Image.fromarray(img)
                 img_orig.save(dir_path + '/' + 'orig.jpg')
 
-                # htm = heatmap.squeeze().cpu().detach().numpy()
+                htm = heatmap.squeeze().cpu().detach().numpy()
                 # plt.imshow(htm)
                 # plt.show()
 
-                # htm = deprocess_image(htm)
-                # visualization, heatmap = show_cam_on_image(img, htm, True)
-                # visualization_m = Image.fromarray(visualization)
-                # visualization_m.save(dir_path + '/' + 'vis.jpg')
+                htm = deprocess_image(htm)
+                visualization, heatmap = show_cam_on_image(img, htm, True)
+                visualization_m = Image.fromarray(visualization)
+                visualization_m.save(dir_path + '/' + 'vis.jpg')
                 # plt.imshow(visualization)
                 # plt.show()
                 # plt.imshow(heatmap)

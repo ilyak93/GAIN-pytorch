@@ -62,13 +62,13 @@ class GCAM(nn.Module):
 
         is_train = self.model.training
 
-        with torch.enable_grad():
+        with torch.enable_grad(): # Why this: because if somebody in test mode disable grad, then we won't be able to calculate heatmap
             # labels_ohe = self._to_ohe(labels).cuda()
             # labels_ohe.requires_grad = True
 
             _, _, img_h, img_w = images.size()
 
-            self.model.train(True) #TODO: use is_train
+            self.model.train(is_train)
             logits = self.model(images)  # BS x num_classes
             self.model.zero_grad()
 
@@ -82,13 +82,6 @@ class GCAM(nn.Module):
             grad_logits = (logits * labels_ohe).sum()  # BS x num_classes
             grad_logits.backward(retain_graph=True)
             self.model.zero_grad()
-
-        if is_train: #TODO: check this
-            self.model.train(True)
-        else:
-            self.model.train(False)
-            self.model.eval()
-            logits = self.model(images)
 
         backward_features = self.backward_features  # BS x C x H x W
         fl = self.feed_forward_features  # BS x C x H x W

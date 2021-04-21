@@ -4,9 +4,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class GCAM(nn.Module):
+class GCAM_v2(nn.Module):
     def __init__(self, model, grad_layer, num_classes):
-        super(GCAM, self).__init__()
+        super(GCAM_v2, self).__init__()
 
         self.model = model
 

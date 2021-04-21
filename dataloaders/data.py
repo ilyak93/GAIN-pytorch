@@ -1,9 +1,9 @@
 import numpy as np
 import os
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Subset
 from dataloaders.pascal_voc_loader import PascalVOCLoader
-from torch.utils.data.sampler import SubsetRandomSampler
+from torch.utils.data.sampler import SubsetRandomSampler, SequentialSampler
 
 
 class RawDataset:
@@ -43,18 +43,37 @@ class RawDataset:
             np.random.shuffle(indices)
         train_indices, val_indices = indices[split:], indices[:split]
 
-        train_sampler = SubsetRandomSampler(train_indices)
-        valid_sampler = SubsetRandomSampler(val_indices)
+        self.seq_train_subset = Subset(self.dataset, train_indices)
 
-        train_loader = torch.utils.data.DataLoader(
+        self.seq_test_subset = Subset(self.dataset, val_indices)
+
+        random_train_sampler = SubsetRandomSampler(train_indices)
+        random_valid_sampler = SubsetRandomSampler(val_indices)
+
+        random_train_loader = torch.utils.data.DataLoader(
             self.dataset,
             batch_size=self.batch_size['train'],
             num_workers=0,
-            sampler=train_sampler)
-        validation_loader = torch.utils.data.DataLoader(
+            sampler=random_train_sampler)
+        random_validation_loader = torch.utils.data.DataLoader(
             self.dataset,
             num_workers=0,
             batch_size=self.batch_size['test'],
-            sampler=valid_sampler)
+            sampler=random_valid_sampler)
 
-        self.datasets = {'train': train_loader, 'test': validation_loader}
+        sequential_train_sampler = SequentialSampler(self.seq_train_subset)
+        sequential_valid_sampler = SequentialSampler(self.seq_test_subset)
+
+        sequetial_train_loader = torch.utils.data.DataLoader(
+            self.seq_train_subset,
+            batch_size=self.batch_size['train'],
+            num_workers=0,
+            sampler=sequential_train_sampler)
+        sequetial_validation_loader = torch.utils.data.DataLoader(
+            self.seq_test_subset,
+            num_workers=0,
+            batch_size=self.batch_size['test'],
+            sampler=sequential_valid_sampler)
+
+        self.datasets = {'rnd_train': random_train_loader, 'rnd_test': random_validation_loader,
+                         'seq_train': sequetial_train_loader, 'seq_test': sequetial_validation_loader}

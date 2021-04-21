@@ -77,8 +77,8 @@ def main():
     epoch_test_multi_accuracy = []
 
 
-    #viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp1'
-    #pathlib.Path(viz_path).mkdir(parents=True, exist_ok=True)
+    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp1'
+    pathlib.Path(viz_path).mkdir(parents=True, exist_ok=True)
 
     start_writing_iteration = 5
 

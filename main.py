@@ -69,11 +69,7 @@ def main():
     epochs = 15
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-    gcam = GCAM(model=model, grad_layer='features', num_classes=20)
-    total_train_loss = []
-    total_train_accuracy = []
-    total_test_loss = []
-    total_test_accuracy = []
+    # gcam = GCAM(model=model, grad_layer='features', num_classes=20)
 
     epoch_train_single_accuracy = []
     epoch_train_multi_accuracy = []
@@ -81,8 +77,10 @@ def main():
     epoch_test_multi_accuracy = []
 
 
-    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2'
-    pathlib.Path(viz_path).mkdir(parents=True, exist_ok=True)
+    #viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp1'
+    #pathlib.Path(viz_path).mkdir(parents=True, exist_ok=True)
+
+    start_writing_iteration = 5
 
     for epoch in range(epochs):
         total_train_single_accuracy = 0
@@ -104,7 +102,7 @@ def main():
         mean_test_multi_accuracy = []
 
 
-        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2/train'
+        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp1/train'
         pathlib.Path(train_path).mkdir(parents=True, exist_ok=True)
         epoch_path = train_path+'/epoch_'+str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -116,10 +114,10 @@ def main():
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
             optimizer.zero_grad()
-            labels = torch.Tensor(label_idx_list).to(device).long()
+            # labels = torch.Tensor(label_idx_list).to(device).long()
 
-            logits, heatmap = gcam(input_tensor, labels)
-
+            logits = model(input_tensor)
+            # logits, heatmap = gcam(input_tensor, labels)
             indices = torch.Tensor(label_idx_list).long().to(device)
             class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
 
@@ -127,23 +125,23 @@ def main():
             loss.backward()
             optimizer.step()
 
-            # Single label evaluation
-            y_pred = logits.detach().argmax()
-            y_pred = y_pred.view(-1)
-            gt, _ = indices.sort(descending=True)
-            gt = gt.view(-1)
-            acc = (y_pred == gt).sum()
-            total_train_single_accuracy += acc
-
-            # Multi label evaluation
-            _, y_pred_multi = logits.detach().topk(num_of_labels)
-            y_pred_multi = y_pred_multi.view(-1)
-            acc_multi = (y_pred_multi == gt).sum() / num_of_labels
-            total_train_multi_accuracy += acc_multi
-
             if i % 100 == 0:
                 print(i)
                 print('Loss per image: {:.3f}'.format(loss.detach().item()))
+
+                # Single label evaluation
+                y_pred = logits.detach().argmax()
+                y_pred = y_pred.view(-1)
+                gt, _ = indices.sort(descending=True)
+                gt = gt.view(-1)
+                acc = (y_pred == gt).sum()
+                total_train_single_accuracy += acc
+
+                # Multi label evaluation
+                _, y_pred_multi = logits.detach().topk(num_of_labels)
+                y_pred_multi = y_pred_multi.view(-1)
+                acc_multi = (y_pred_multi == gt).sum() / num_of_labels
+                total_train_multi_accuracy += acc_multi
 
                 train_accuracy.append(acc)
                 train_multi_accuracy.append(acc_multi)
@@ -151,7 +149,7 @@ def main():
 
             if i % 200 == 0:
                 train_epoch_loss.append(loss.detach().item())
-                if len(train_accuracy) > 1:
+                if len(train_accuracy) > start_writing_iteration:
                     mean_train_accuracy.append(sum(train_accuracy) / len(train_accuracy))
                     mean_train_multi_accuracy.append(sum(train_multi_accuracy) / len(train_multi_accuracy))
                     print('Average train single label accuracy: {:.3f}'.format(sum(train_accuracy) / len(train_accuracy)))
@@ -172,14 +170,14 @@ def main():
                 img_orig = Image.fromarray(img)
                 img_orig.save(dir_path + '/' + 'orig.jpg')
 
-                htm = heatmap.squeeze().cpu().detach().numpy()
+                # htm = heatmap.squeeze().cpu().detach().numpy()
                 #plt.imshow(htm)
                 #plt.show()
 
-                htm = deprocess_image(htm)
-                visualization, heatmap = show_cam_on_image(img, htm, True)
-                visualization_m = Image.fromarray(visualization)
-                visualization_m.save(dir_path+'/'+'vis.jpg')
+                # htm = deprocess_image(htm)
+                # visualization, heatmap = show_cam_on_image(img, htm, True)
+                # visualization_m = Image.fromarray(visualization)
+                # visualization_m.save(dir_path+'/'+'vis.jpg')
                 #plt.imshow(visualization)
                 #plt.show()
                 #plt.imshow(heatmap)
@@ -190,28 +188,23 @@ def main():
                 if len(train_epoch_loss) > 1:
                     #mx = max(epoch_loss)
                     #smooth = [l / mx for l in epoch_loss]
-                    plt.plot(train_epoch_loss)
+                    x_loss = np.arange(0, i+1, 200)
+                    plt.plot(x_loss, train_epoch_loss)
                     plt.savefig(epoch_path+'/epoch_loss.jpg')
                     #plt.plot(smooth)
                     #plt.savefig(epoch_path + '/smooth.jpg')
                     plt.close()
-                    plt.plot(mean_train_accuracy)
-                    plt.savefig(epoch_path + '/train_accuracy.jpg')
-                    plt.close()
-                    plt.plot(mean_train_multi_accuracy)
-                    plt.savefig(epoch_path + '/train_multi_accuracy.jpg')
-                    plt.close()
+                    if i % 200 == 0 and i > start_writing_iteration*100:
+                        x_acc = np.arange(600, i + 1, 200)
+                        plt.plot(x_acc, mean_train_accuracy)
+                        plt.savefig(epoch_path + '/train_accuracy.jpg')
+                        plt.close()
+                        plt.plot(x_acc, mean_train_multi_accuracy)
+                        plt.savefig(epoch_path + '/train_multi_accuracy.jpg')
+                        plt.close()
             i+=1
 
-
-        total_train_loss.append(sum(train_epoch_loss)/len(train_epoch_loss))
-        plt.plot(total_train_loss)
-        plt.savefig(viz_path + '/total_train_loss.jpg')
-        total_train_accuracy.append(mean_train_accuracy[-1])
-        plt.plot(total_train_loss)
-        plt.savefig(viz_path + '/total_train_accuracy.jpg')
-
-        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2/test'
+        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp1/test'
         pathlib.Path(test_path).mkdir(parents=True, exist_ok=True)
         epoch_path = test_path + '/epoch_' + str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -222,43 +215,46 @@ def main():
             input_tensor = preprocess_image(sample['image'].squeeze().numpy(), mean=mean, std=std).to(device)
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
-            labels = torch.Tensor(label_idx_list).to(device).long()
-            logits, heatmap = gcam(input_tensor, labels)
+            optimizer.zero_grad()
+            # labels = torch.Tensor(label_idx_list).to(device).long()
 
+            logits = model(input_tensor)
+            # logits, heatmap = gcam(input_tensor, labels)
             indices = torch.Tensor(label_idx_list).long().to(device)
             class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
+
             loss = loss_fn(logits, class_onehot)
-
-            # Single label evaluation
-            y_pred = logits.detach().argmax()
-            y_pred = y_pred.view(-1)
-            gt, _ = indices.sort(descending=True)
-            gt = gt.view(-1)
-            acc = (y_pred == gt).sum()
-            total_test_single_accuracy += acc
-
-            # Multi label evaluation
-            _, y_pred_multi = logits.detach().topk(num_of_labels)
-            y_pred_multi = y_pred_multi.view(-1)
-            acc_multi = (y_pred_multi == gt).sum() / num_of_labels
-            total_test_multi_accuracy += acc_multi
+            loss.backward()
+            optimizer.step()
 
             if i % 25 == 0:
                 print(i)
                 print('Loss per image: {:.3f}'.format(loss.detach().item()))
 
+                # Single label evaluation
+                y_pred = logits.detach().argmax()
+                y_pred = y_pred.view(-1)
+                gt, _ = indices.sort(descending=True)
+                gt = gt.view(-1)
+                acc = (y_pred == gt).sum()
+                total_test_single_accuracy += acc
+
+                # Multi label evaluation
+                _, y_pred_multi = logits.detach().topk(num_of_labels)
+                y_pred_multi = y_pred_multi.view(-1)
+                acc_multi = (y_pred_multi == gt).sum() / num_of_labels
+                total_test_multi_accuracy += acc_multi
+
                 test_accuracy.append(acc)
                 test_multi_accuracy.append(acc_multi)
 
-
             if i % 50 == 0:
                 test_epoch_loss.append(loss.detach().item())
-                if len(train_accuracy) > 1:
+                if len(test_accuracy) > start_writing_iteration:
                     mean_test_accuracy.append(sum(test_accuracy) / len(test_accuracy))
                     mean_test_multi_accuracy.append(sum(test_multi_accuracy) / len(test_multi_accuracy))
                     print('Average test single label accuracy: {:.3f}'.format(sum(test_accuracy) / len(test_accuracy)))
-                    print('Average test multi label accuracy: {:.3f}'.format(sum(test_multi_accuracy) / len(test_multi_accuracy)))
-
+                    print('Average train multi label accuracy: {:.3f}'.format(sum(test_multi_accuracy) / len(test_multi_accuracy)))
 
                 _, y_pred = logits.detach().topk(num_of_labels)
                 y_pred = y_pred.view(-1)
@@ -276,14 +272,14 @@ def main():
                 img_orig = Image.fromarray(img)
                 img_orig.save(dir_path + '/' + 'orig.jpg')
 
-                htm = heatmap.squeeze().cpu().detach().numpy()
+                # htm = heatmap.squeeze().cpu().detach().numpy()
                 # plt.imshow(htm)
                 # plt.show()
 
-                htm = deprocess_image(htm)
-                visualization, heatmap = show_cam_on_image(img, htm, True)
-                visualization_m = Image.fromarray(visualization)
-                visualization_m.save(dir_path + '/' + 'vis.jpg')
+                # htm = deprocess_image(htm)
+                # visualization, heatmap = show_cam_on_image(img, htm, True)
+                # visualization_m = Image.fromarray(visualization)
+                # visualization_m.save(dir_path+'/'+'vis.jpg')
                 # plt.imshow(visualization)
                 # plt.show()
                 # plt.imshow(heatmap)
@@ -293,19 +289,21 @@ def main():
                 if len(test_epoch_loss) > 1:
                     # mx = max(epoch_loss)
                     # smooth = [l / mx for l in epoch_loss]
-                    plt.plot(test_epoch_loss)
+                    x_loss = np.arange(0, i + 1, 50)
+                    plt.plot(x_loss, test_epoch_loss)
                     plt.savefig(epoch_path + '/epoch_loss.jpg')
                     # plt.plot(smooth)
                     # plt.savefig(epoch_path + '/smooth.jpg')
                     plt.close()
-                    plt.plot(mean_test_accuracy)
-                    plt.savefig(epoch_path + '/test_accuracy.jpg')
-                    plt.close()
-                    plt.plot(mean_test_multi_accuracy)
-                    plt.savefig(epoch_path + '/test_multi_accuracy.jpg')
-                    plt.close()
-
-            i+=1
+                    if i % 50 == 0 and i > start_writing_iteration * 25:
+                        x_acc = np.arange(150, i + 1, 50)
+                        plt.plot(x_acc, mean_test_accuracy)
+                        plt.savefig(epoch_path + '/test_accuracy.jpg')
+                        plt.close()
+                        plt.plot(x_acc, mean_test_multi_accuracy)
+                        plt.savefig(epoch_path + '/test_multi_accuracy.jpg')
+                        plt.close()
+            i += 1
 
         print("finished epoch number:")
         print(epoch)
@@ -334,13 +332,6 @@ def main():
         plt.plot(epoch_test_multi_accuracy)
         plt.savefig(viz_path + '/epoch_test_multi_accuracy.jpg')
         plt.close()
-
-        total_test_loss.append(sum(test_epoch_loss) / len(test_epoch_loss))
-        plt.plot(total_test_loss)
-        plt.savefig(viz_path + '/total_test_loss.jpg')
-        total_test_accuracy.append(mean_test_accuracy[-1])
-        plt.plot(total_test_loss)
-        plt.savefig(viz_path + '/total_test_accuracy.jpg')
 
 
 

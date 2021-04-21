@@ -111,7 +111,7 @@ def main():
 
         model.train(True)
         i = 0
-        for sample in rds.datasets['rnd_train']:
+        for sample in rds.datasets['seq_train']:
             input_tensor = preprocess_image(sample['image'].squeeze().numpy(), mean=mean, std=std).to(device)
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
@@ -218,7 +218,7 @@ def main():
 
         model.train(False)
         i = 0
-        for sample in rds.datasets['rnd_test']:
+        for sample in rds.datasets['seq_test']:
             input_tensor = preprocess_image(sample['image'].squeeze().numpy(), mean=mean, std=std).to(device)
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)

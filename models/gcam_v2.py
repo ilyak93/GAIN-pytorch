@@ -92,4 +92,8 @@ class GCAM(nn.Module):
         Ac = F.upsample_bilinear(Ac, size=images.size()[2:])
         heatmap = Ac
 
+        self.backward_features = None
+        self.feed_forward_features = None
+
+
         return logits, heatmap

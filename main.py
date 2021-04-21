@@ -242,7 +242,7 @@ def main():
             acc_multi = (y_pred_multi == gt).sum() / num_of_labels
             total_test_multi_accuracy += acc_multi
 
-            if i % 100 == 0:
+            if i % 25 == 0:
                 print(i)
                 print('Loss per image: {:.3f}'.format(loss.detach().item()))
 
@@ -250,7 +250,7 @@ def main():
                 test_multi_accuracy.append(acc_multi)
 
 
-            if i % 200 == 0:
+            if i % 50 == 0:
                 test_epoch_loss.append(loss.detach().item())
                 if len(train_accuracy) > 1:
                     mean_test_accuracy.append(sum(test_accuracy) / len(test_accuracy))

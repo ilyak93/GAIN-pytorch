@@ -59,17 +59,17 @@ def main():
                           output_dims=input_dims,
                           batch_size_dict=batch_size_dict)
 
-    num_train_samples = len(rds.datasets['train'])
+    num_train_samples = len(rds.datasets['seq_train'])
     print(num_train_samples)
 
-    num_test_samples = len(rds.datasets['test'])
+    num_test_samples = len(rds.datasets['seq_test'])
     print(num_test_samples)
 
 
     epochs = 15
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-    gcam = GCAM(model=model, grad_layer='features', num_classes=20)
+    # gcam = GCAM(model=model, grad_layer='features', num_classes=20)
     total_train_loss = []
     total_train_accuracy = []
     total_test_loss = []
@@ -81,7 +81,7 @@ def main():
     epoch_test_multi_accuracy = []
 
 
-    viz_path = 'C:/Users/Student2/PycharmProjects/GCAM/exp2'
+    viz_path = 'C:/Users/Student2/PycharmProjects/GCAM/exp1'
     pathlib.Path(viz_path).mkdir(parents=True, exist_ok=True)
 
     for epoch in range(epochs):
@@ -104,22 +104,22 @@ def main():
         mean_test_multi_accuracy = []
 
 
-        train_path = 'C:/Users/Student2/PycharmProjects/GCAM/exp2/train'
+        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp1/train'
         pathlib.Path(train_path).mkdir(parents=True, exist_ok=True)
         epoch_path = train_path+'/epoch_'+str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
 
         model.train(True)
         i = 0
-        for sample in rds.datasets['train']:
+        for sample in rds.datasets['rnd_train']:
             input_tensor = preprocess_image(sample['image'].squeeze().numpy(), mean=mean, std=std).to(device)
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
             optimizer.zero_grad()
             labels = torch.Tensor(label_idx_list).to(device).long()
 
-            logits, heatmap = gcam(input_tensor, labels)
-
+            logits = model(input_tensor)
+            # logits, heatmap = gcam(input_tensor, labels)
             indices = torch.Tensor(label_idx_list).long().to(device)
             class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
 
@@ -172,14 +172,14 @@ def main():
                 img_orig = Image.fromarray(img)
                 img_orig.save(dir_path + '/' + 'orig.jpg')
 
-                htm = heatmap.squeeze().cpu().detach().numpy()
+                # htm = heatmap.squeeze().cpu().detach().numpy()
                 #plt.imshow(htm)
                 #plt.show()
 
-                htm = deprocess_image(htm)
-                visualization, heatmap = show_cam_on_image(img, htm, True)
-                visualization_m = Image.fromarray(visualization)
-                visualization_m.save(dir_path+'/'+'vis.jpg')
+                # htm = deprocess_image(htm)
+                # visualization, heatmap = show_cam_on_image(img, htm, True)
+                # visualization_m = Image.fromarray(visualization)
+                # visualization_m.save(dir_path+'/'+'vis.jpg')
                 #plt.imshow(visualization)
                 #plt.show()
                 #plt.imshow(heatmap)
@@ -211,20 +211,19 @@ def main():
         plt.plot(total_train_loss)
         plt.savefig(viz_path + '/total_train_accuracy.jpg')
 
-        test_path = 'C:/Users/Student2/PycharmProjects/GCAM/exp2/test'
+        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp1/test'
         pathlib.Path(test_path).mkdir(parents=True, exist_ok=True)
         epoch_path = test_path + '/epoch_' + str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
 
         model.train(False)
         i = 0
-        for sample in rds.datasets['test']:
+        for sample in rds.datasets['rnd_test']:
             input_tensor = preprocess_image(sample['image'].squeeze().numpy(), mean=mean, std=std).to(device)
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
             labels = torch.Tensor(label_idx_list).to(device).long()
-            logits, heatmap = gcam(input_tensor, labels)
-
+            logits = model(input_tensor)
             indices = torch.Tensor(label_idx_list).long().to(device)
             class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
             loss = loss_fn(logits, class_onehot)
@@ -243,7 +242,7 @@ def main():
             acc_multi = (y_pred_multi == gt).sum() / num_of_labels
             total_test_multi_accuracy += acc_multi
 
-            if i % 25 == 0:
+            if i % 100 == 0:
                 print(i)
                 print('Loss per image: {:.3f}'.format(loss.detach().item()))
 
@@ -251,7 +250,7 @@ def main():
                 test_multi_accuracy.append(acc_multi)
 
 
-            if i % 50 == 0:
+            if i % 200 == 0:
                 test_epoch_loss.append(loss.detach().item())
                 if len(train_accuracy) > 1:
                     mean_test_accuracy.append(sum(test_accuracy) / len(test_accuracy))
@@ -276,14 +275,14 @@ def main():
                 img_orig = Image.fromarray(img)
                 img_orig.save(dir_path + '/' + 'orig.jpg')
 
-                htm = heatmap.squeeze().cpu().detach().numpy()
+                # htm = heatmap.squeeze().cpu().detach().numpy()
                 # plt.imshow(htm)
                 # plt.show()
 
-                htm = deprocess_image(htm)
-                visualization, heatmap = show_cam_on_image(img, htm, True)
-                visualization_m = Image.fromarray(visualization)
-                visualization_m.save(dir_path + '/' + 'vis.jpg')
+                # htm = deprocess_image(htm)
+                # visualization, heatmap = show_cam_on_image(img, htm, True)
+                # visualization_m = Image.fromarray(visualization)
+                # visualization_m.save(dir_path + '/' + 'vis.jpg')
                 # plt.imshow(visualization)
                 # plt.show()
                 # plt.imshow(heatmap)

@@ -11,6 +11,7 @@ from dataloaders import data
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image
 
 from models.gcam import GCAM
+from models.gcam_v2 import GCAM_v2
 from PIL import Image
 from tensorboardX import SummaryWriter
 
@@ -69,7 +70,7 @@ def main():
     epochs = 15
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-    gcam = GCAM(model=model, grad_layer='features', num_classes=20)
+    gcam = GCAM_v2(model=model, grad_layer='features', num_classes=20)
 
     epoch_train_single_accuracy = []
     epoch_train_multi_accuracy = []
@@ -77,7 +78,7 @@ def main():
     epoch_test_multi_accuracy = []
 
 
-    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2'
+    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp3'
     pathlib.Path(viz_path).mkdir(parents=True, exist_ok=True)
 
     start_writing_iteration = 5
@@ -102,7 +103,7 @@ def main():
         mean_test_multi_accuracy = []
 
 
-        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2/train'
+        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp3/train'
         pathlib.Path(train_path).mkdir(parents=True, exist_ok=True)
         epoch_path = train_path+'/epoch_'+str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -205,7 +206,7 @@ def main():
                         plt.close()
             i+=1
 
-        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2/test'
+        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp3/test'
         pathlib.Path(test_path).mkdir(parents=True, exist_ok=True)
         epoch_path = test_path + '/epoch_' + str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -241,7 +242,6 @@ def main():
             y_pred_multi = y_pred_multi.view(-1)
             acc_multi = (y_pred_multi == gt).sum() / num_of_labels
             total_test_multi_accuracy += acc_multi.detach().cpu()
-
 
             if i % 25 == 0:
                 print(i)

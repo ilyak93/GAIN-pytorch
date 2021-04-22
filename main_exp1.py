@@ -197,10 +197,10 @@ def main():
                     plt.close()
                     if i % 200 == 0 and i > start_writing_iteration * 100:
                         x_acc = np.arange(600, i + 1, 200)
-                        plt.plot(x_acc, mean_train_accuracy[2:])
+                        plt.plot(x_acc, mean_train_accuracy)
                         plt.savefig(epoch_path + '/train_accuracy.jpg')
                         plt.close()
-                        plt.plot(x_acc, mean_train_multi_accuracy[2:])
+                        plt.plot(x_acc, mean_train_multi_accuracy)
                         plt.savefig(epoch_path + '/train_multi_accuracy.jpg')
                         plt.close()
             i+=1

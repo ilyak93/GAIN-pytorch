@@ -125,35 +125,35 @@ def main():
             loss.backward()
             optimizer.step()
 
+            # Single label evaluation
+            y_pred = logits.detach().argmax()
+            y_pred = y_pred.view(-1)
+            gt, _ = indices.sort(descending=True)
+            gt = gt.view(-1)
+            acc = (y_pred == gt).sum()
+            total_train_single_accuracy += acc.detach().cpu()
+
+            # Multi label evaluation
+            _, y_pred_multi = logits.detach().topk(num_of_labels)
+            y_pred_multi = y_pred_multi.view(-1)
+            acc_multi = (y_pred_multi == gt).sum() / num_of_labels
+            total_train_multi_accuracy += acc_multi.detach().cpu()
+
             if i % 100 == 0:
                 print(i)
                 print('Loss per image: {:.3f}'.format(loss.detach().item()))
-
-                # Single label evaluation
-                y_pred = logits.detach().argmax()
-                y_pred = y_pred.view(-1)
-                gt, _ = indices.sort(descending=True)
-                gt = gt.view(-1)
-                acc = (y_pred == gt).sum()
-                total_train_single_accuracy += acc
-
-                # Multi label evaluation
-                _, y_pred_multi = logits.detach().topk(num_of_labels)
-                y_pred_multi = y_pred_multi.view(-1)
-                acc_multi = (y_pred_multi == gt).sum() / num_of_labels
-                total_train_multi_accuracy += acc_multi
-
-                train_accuracy.append(acc)
-                train_multi_accuracy.append(acc_multi)
-
+                train_accuracy.append(acc.detach().cpu())
+                train_multi_accuracy.append(acc_multi.detach().cpu())
 
             if i % 200 == 0:
                 train_epoch_loss.append(loss.detach().item())
                 if len(train_accuracy) > start_writing_iteration:
-                    mean_train_accuracy.append(sum(train_accuracy) / len(train_accuracy))
-                    mean_train_multi_accuracy.append(sum(train_multi_accuracy) / len(train_multi_accuracy))
-                    print('Average train single label accuracy: {:.3f}'.format(sum(train_accuracy) / len(train_accuracy)))
-                    print('Average train multi label accuracy: {:.3f}'.format(sum(train_multi_accuracy) / len(train_multi_accuracy)))
+                    acc_mean = (sum(train_accuracy) / len(train_accuracy)).detach().cpu()
+                    mean_train_accuracy.append(acc_mean)
+                    acc_multi_mean = (sum(train_multi_accuracy) / len(train_multi_accuracy)).detach().cpu()
+                    mean_train_multi_accuracy.append(acc_multi_mean)
+                    print('Average train single label accuracy: {:.3f}'.format(acc_mean))
+                    print('Average train multi label accuracy: {:.3f}'.format(acc_multi_mean))
 
                 _, y_pred = logits.detach().topk(num_of_labels)
                 y_pred = y_pred.view(-1)
@@ -162,7 +162,8 @@ def main():
                 predicted_categories = [categories[x] for x in gt]
 
                 labels = [categories[label_idx] for label_idx in label_idx_list]
-                dir_name = str(i)+'_labels_'+'_'.join(labels)+'_predicted_'+'_'.join(predicted_categories) +'_loss_'+str(loss.detach().item())
+                loss = loss.detach().item()
+                dir_name = str(i)+'_labels_'+'_'.join(labels)+'_predicted_'+'_'.join(predicted_categories) +'_loss_'+str(loss)
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
@@ -194,12 +195,12 @@ def main():
                     #plt.plot(smooth)
                     #plt.savefig(epoch_path + '/smooth.jpg')
                     plt.close()
-                    if i % 200 == 0 and i > start_writing_iteration*100:
+                    if i % 200 == 0 and i > start_writing_iteration * 100:
                         x_acc = np.arange(600, i + 1, 200)
-                        plt.plot(x_acc, mean_train_accuracy)
+                        plt.plot(x_acc, mean_train_accuracy[2:])
                         plt.savefig(epoch_path + '/train_accuracy.jpg')
                         plt.close()
-                        plt.plot(x_acc, mean_train_multi_accuracy)
+                        plt.plot(x_acc, mean_train_multi_accuracy[2:])
                         plt.savefig(epoch_path + '/train_multi_accuracy.jpg')
                         plt.close()
             i+=1
@@ -227,34 +228,35 @@ def main():
             loss.backward()
             optimizer.step()
 
+            # Single label evaluation
+            y_pred = logits.detach().argmax()
+            y_pred = y_pred.view(-1)
+            gt, _ = indices.sort(descending=True)
+            gt = gt.view(-1)
+            acc = (y_pred == gt).sum()
+            total_test_single_accuracy += acc.detach().cpu()
+
+            # Multi label evaluation
+            _, y_pred_multi = logits.detach().topk(num_of_labels)
+            y_pred_multi = y_pred_multi.view(-1)
+            acc_multi = (y_pred_multi == gt).sum() / num_of_labels
+            total_test_multi_accuracy += acc_multi.detach().cpu()
+
             if i % 25 == 0:
                 print(i)
                 print('Loss per image: {:.3f}'.format(loss.detach().item()))
-
-                # Single label evaluation
-                y_pred = logits.detach().argmax()
-                y_pred = y_pred.view(-1)
-                gt, _ = indices.sort(descending=True)
-                gt = gt.view(-1)
-                acc = (y_pred == gt).sum()
-                total_test_single_accuracy += acc
-
-                # Multi label evaluation
-                _, y_pred_multi = logits.detach().topk(num_of_labels)
-                y_pred_multi = y_pred_multi.view(-1)
-                acc_multi = (y_pred_multi == gt).sum() / num_of_labels
-                total_test_multi_accuracy += acc_multi
-
-                test_accuracy.append(acc)
-                test_multi_accuracy.append(acc_multi)
+                test_accuracy.append(acc.detach().cpu())
+                test_multi_accuracy.append(acc_multi.detach().cpu())
 
             if i % 50 == 0:
                 test_epoch_loss.append(loss.detach().item())
                 if len(test_accuracy) > start_writing_iteration:
-                    mean_test_accuracy.append(sum(test_accuracy) / len(test_accuracy))
-                    mean_test_multi_accuracy.append(sum(test_multi_accuracy) / len(test_multi_accuracy))
-                    print('Average test single label accuracy: {:.3f}'.format(sum(test_accuracy) / len(test_accuracy)))
-                    print('Average train multi label accuracy: {:.3f}'.format(sum(test_multi_accuracy) / len(test_multi_accuracy)))
+                    acc_mean = (sum(test_accuracy) / len(test_accuracy)).detach().cpu()
+                    mean_test_accuracy.append(acc_mean)
+                    acc_multi_mean = (sum(test_multi_accuracy) / len(test_multi_accuracy)).detach().cpu()
+                    mean_test_multi_accuracy.append(acc_multi_mean)
+                    print('Average test single label accuracy: {:.3f}'.format(acc_mean))
+                    print('Average test multi label accuracy: {:.3f}'.format(acc_multi_mean))
 
                 _, y_pred = logits.detach().topk(num_of_labels)
                 y_pred = y_pred.view(-1)
@@ -263,8 +265,9 @@ def main():
                 predicted_categories = [categories[x] for x in gt]
 
                 labels = [categories[label_idx] for label_idx in label_idx_list]
+                loss = loss.detach().item()
                 dir_name = str(i) + '_labels_' + '_'.join(labels) + '_predicted_' + '_'.join(
-                    predicted_categories) + '_loss_' + str(loss.detach().item())
+                    predicted_categories) + '_loss_' + str(loss)
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
@@ -320,16 +323,16 @@ def main():
         epoch_test_multi_accuracy.append(total_test_multi_accuracy / num_test_samples)
         print('Average epoch multi test accuracy: {:.3f}'.format(total_test_multi_accuracy / num_test_samples))
 
-        plt.plot(epoch_train_single_accuracy)
+        plt.plot(list(range(len(epoch_train_single_accuracy))), epoch_train_single_accuracy)
         plt.savefig(viz_path + '/epoch_train_single_accuracy.jpg')
         plt.close()
-        plt.plot(epoch_train_multi_accuracy)
+        plt.plot(list(range(len(epoch_train_multi_accuracy))), epoch_train_multi_accuracy)
         plt.savefig(viz_path + '/epoch_train_multi_accuracy.jpg')
         plt.close()
-        plt.plot(epoch_test_single_accuracy)
+        plt.plot(list(range(len(epoch_test_single_accuracy))), epoch_test_single_accuracy)
         plt.savefig(viz_path + '/epoch_test_single_accuracy.jpg')
         plt.close()
-        plt.plot(epoch_test_multi_accuracy)
+        plt.plot(list(range(len(epoch_test_multi_accuracy))), epoch_test_multi_accuracy)
         plt.savefig(viz_path + '/epoch_test_multi_accuracy.jpg')
         plt.close()
 

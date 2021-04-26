@@ -11,7 +11,6 @@ from dataloaders import data
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image
 
 from models.gcam import GCAM
-from models.gcam_v2 import GCAM_v2
 from PIL import Image
 from tensorboardX import SummaryWriter
 
@@ -70,7 +69,7 @@ def main():
     epochs = 15
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-    gcam = GCAM_v2(model=model, grad_layer='features', num_classes=20)
+    # gcam = GCAM(model=model, grad_layer='features', num_classes=20)
 
     epoch_train_single_accuracy = []
     epoch_train_multi_accuracy = []
@@ -78,7 +77,7 @@ def main():
     epoch_test_multi_accuracy = []
 
 
-    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp3'
+    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp1'
     pathlib.Path(viz_path).mkdir(parents=True, exist_ok=True)
 
     start_writing_iteration = 5
@@ -103,7 +102,7 @@ def main():
         mean_test_multi_accuracy = []
 
 
-        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp3/train'
+        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp1/train'
         pathlib.Path(train_path).mkdir(parents=True, exist_ok=True)
         epoch_path = train_path+'/epoch_'+str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -115,10 +114,10 @@ def main():
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
             optimizer.zero_grad()
-            labels = torch.Tensor(label_idx_list).to(device).long()
+            # labels = torch.Tensor(label_idx_list).to(device).long()
 
-            # logits = model(input_tensor)
-            logits, heatmap = gcam(input_tensor, labels)
+            logits = model(input_tensor)
+            # logits, heatmap = gcam(input_tensor, labels)
             indices = torch.Tensor(label_idx_list).long().to(device)
             class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
 
@@ -172,14 +171,14 @@ def main():
                 img_orig = Image.fromarray(img)
                 img_orig.save(dir_path + '/' + 'orig.jpg')
 
-                htm = heatmap.squeeze().cpu().detach().numpy()
+                # htm = heatmap.squeeze().cpu().detach().numpy()
                 #plt.imshow(htm)
                 #plt.show()
 
-                htm = deprocess_image(htm)
-                visualization, heatmap = show_cam_on_image(img, htm, True)
-                visualization_m = Image.fromarray(visualization)
-                visualization_m.save(dir_path+'/'+'vis.jpg')
+                # htm = deprocess_image(htm)
+                # visualization, heatmap = show_cam_on_image(img, htm, True)
+                # visualization_m = Image.fromarray(visualization)
+                # visualization_m.save(dir_path+'/'+'vis.jpg')
                 #plt.imshow(visualization)
                 #plt.show()
                 #plt.imshow(heatmap)
@@ -206,7 +205,7 @@ def main():
                         plt.close()
             i+=1
 
-        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp3/test'
+        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp1/test'
         pathlib.Path(test_path).mkdir(parents=True, exist_ok=True)
         epoch_path = test_path + '/epoch_' + str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -218,16 +217,14 @@ def main():
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
             optimizer.zero_grad()
-            labels = torch.Tensor(label_idx_list).to(device).long()
+            # labels = torch.Tensor(label_idx_list).to(device).long()
 
-            # logits = model(input_tensor)
-            logits, heatmap = gcam(input_tensor, labels)
+            logits = model(input_tensor)
+            # logits, heatmap = gcam(input_tensor, labels)
             indices = torch.Tensor(label_idx_list).long().to(device)
             class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
 
             loss = loss_fn(logits, class_onehot)
-            loss.backward()
-            optimizer.step()
 
             # Single label evaluation
             y_pred = logits.detach().argmax()
@@ -276,14 +273,14 @@ def main():
                 img_orig = Image.fromarray(img)
                 img_orig.save(dir_path + '/' + 'orig.jpg')
 
-                htm = heatmap.squeeze().cpu().detach().numpy()
+                # htm = heatmap.squeeze().cpu().detach().numpy()
                 # plt.imshow(htm)
                 # plt.show()
 
-                htm = deprocess_image(htm)
-                visualization, heatmap = show_cam_on_image(img, htm, True)
-                visualization_m = Image.fromarray(visualization)
-                visualization_m.save(dir_path+'/'+'vis.jpg')
+                # htm = deprocess_image(htm)
+                # visualization, heatmap = show_cam_on_image(img, htm, True)
+                # visualization_m = Image.fromarray(visualization)
+                # visualization_m.save(dir_path+'/'+'vis.jpg')
                 # plt.imshow(visualization)
                 # plt.show()
                 # plt.imshow(heatmap)

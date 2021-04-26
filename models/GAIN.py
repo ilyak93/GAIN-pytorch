@@ -6,9 +6,9 @@ import torch.nn.functional as F
 from utils.image import denorm
 
 
-class GCAM(nn.Module):
+class GAIN(nn.Module):
     def __init__(self, model, grad_layer, num_classes, pretraining_epochs, mean, std):
-        super(GCAM, self).__init__()
+        super(GAIN, self).__init__()
 
         self.model = model
 

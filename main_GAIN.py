@@ -141,7 +141,7 @@ def main():
             total_loss = cl_loss * loss_factor
             total_loss += am_loss * am_factor
 
-            if gcam.AM_enabled():
+            if gain.AM_enabled():
                 loss = total_loss
             else:
                 loss = cl_loss

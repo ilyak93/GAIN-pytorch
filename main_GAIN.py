@@ -70,7 +70,7 @@ def main():
     epochs = 10
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-    gain = GAIN(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5, mean=mean, std=std)
+    gain = GAIN(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5, mean=mean, std=std, pretrained=True)
 
     loss_factor = 0.5
     am_factor = 0.5
@@ -141,8 +141,8 @@ def main():
 
             am_loss = nn.Softmax(dim=1)(logits_am)
             _, am_labels = am_loss.topk(num_of_labels)
-            am_loss = am_loss[labels]
-            am_loss = am_loss.sum() / am_loss.size(1)
+            am_loss = am_loss.view(-1)[labels]
+            am_loss = am_loss.sum() / am_loss.size(0)
 
             total_loss = cl_loss * loss_factor
             total_loss += am_loss * am_factor
@@ -227,7 +227,7 @@ def main():
                 masked_image_m = Image.fromarray(masked_image)
 
                 am_loss = am_loss.detach().item()
-                predicted_am_categories = [categories[x] for x in am_labels]
+                predicted_am_categories = [categories[x] for x in am_labels.view(-1)]
                 masked_image_m.save(dir_path + '/' + 'masked_img_'+'_'.join(predicted_am_categories)+'_'+str(am_loss)+'.jpg')
 
                 if len(train_epoch_cl_loss) > 1:
@@ -284,7 +284,8 @@ def main():
 
             total_loss = cl_loss * loss_factor
             am_loss = nn.Softmax(dim=1)(logits_am)
-            am_loss, _ = am_loss[labels]
+            am_loss = am_loss.view(-1)[labels]
+            am_loss = am_loss.sum() / am_loss.size(0)
             _, am_labels = am_loss.topk(num_of_labels)
             am_loss = am_loss.sum() / am_loss.size(1)
             total_loss += am_loss * am_factor

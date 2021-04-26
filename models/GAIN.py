@@ -3,12 +3,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from utils.image import denorm
+
 
 class GCAM(nn.Module):
-    def __init__(self, model, grad_layer, num_classes):
+    def __init__(self, model, grad_layer, num_classes, pretraining_epochs, mean, std):
         super(GCAM, self).__init__()
 
         self.model = model
+
+        self.mean = mean
+
+        self.std = std
 
         # print(self.model)
         self.grad_layer = grad_layer
@@ -24,8 +30,12 @@ class GCAM(nn.Module):
         self._register_hooks(grad_layer)
 
         # sigma, omega for making the soft-mask
-        self.sigma = 0.2
-        self.omega = 100
+        self.sigma = 0.01 #TODO: maybe to make it trainable, anyway think how to tune it, maybe hypertuning or other smart choice.
+        self.omega = 10 #TODO: maybe to make it trainable, anyway think how to tune it, maybe hypertuning or other smart choice.
+
+        self.pretraining_epochs = pretraining_epochs
+        self.cur_epoch = 0
+        self.enable_am = False
 
     def _register_hooks(self, grad_layer):
         def forward_hook(module, input, output):
@@ -69,17 +79,17 @@ class GCAM(nn.Module):
             _, _, img_h, img_w = images.size()
 
             self.model.train(True) #TODO: use is_train
-            logits = self.model(images)  # BS x num_classes
+            logits_cl = self.model(images)  # BS x num_classes
             self.model.zero_grad()
 
             if not is_train:
-                pred = F.softmax(logits).argmax(dim=1)
+                pred = F.softmax(logits_cl).argmax(dim=1)
                 labels_ohe = self._to_ohe(pred).cuda()
             else:
                 labels_ohe = self._to_ohe(labels).cuda()
 
             #gradient = logits * labels_ohe
-            grad_logits = (logits * labels_ohe).sum()  # BS x num_classes
+            grad_logits = (logits_cl * labels_ohe).sum()  # BS x num_classes
             grad_logits.backward(retain_graph=True)
             self.model.zero_grad()
 
@@ -88,7 +98,7 @@ class GCAM(nn.Module):
         else:
             self.model.train(False)
             self.model.eval()
-            logits = self.model(images)
+            logits_cl = self.model(images)
 
         backward_features = self.backward_features  # BS x C x H x W
         fl = self.feed_forward_features  # BS x C x H x W
@@ -99,4 +109,23 @@ class GCAM(nn.Module):
         Ac = F.upsample_bilinear(Ac, size=images.size()[2:])
         heatmap = Ac
 
-        return logits, heatmap
+        logits_am = None
+
+        Ac_min = Ac.min()
+        Ac_max = Ac.max()
+        scaled_ac = (Ac - Ac_min) / (Ac_max - Ac_min)
+        mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
+        masked_image = images - images * mask
+
+        #if self.enable_am:
+        logits_am = self.model(masked_image)
+
+        return logits_cl, logits_am, heatmap, masked_image
+
+    def increase_epoch_count(self):
+        self.cur_epoch += 1
+        if self.cur_epoch >= self.pretraining_epochs:
+            self.enable_am = True
+
+    def AM_enabled(self):
+        return self.enable_am

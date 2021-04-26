@@ -3,14 +3,15 @@ import pathlib
 import torch
 import torchvision
 from torch import nn
+import torch.nn.functional as F
 from torchvision.models import vgg19, wide_resnet101_2, mobilenet_v2
 import numpy as np
 import matplotlib.pyplot as plt
 
 from dataloaders import data
-from utils.image import show_cam_on_image, preprocess_image, deprocess_image
+from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm
 
-from models.gcam import GCAM
+from models.GAIN import GCAM
 from PIL import Image
 from tensorboardX import SummaryWriter
 
@@ -66,10 +67,13 @@ def main():
     print(num_test_samples)
 
 
-    epochs = 15
+    epochs = 10
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-    gcam = GCAM(model=model, grad_layer='features', num_classes=20)
+    gcam = GCAM(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5, mean=mean, std=std)
+
+    loss_factor = 0.5
+    am_factor = 0.5
 
     epoch_train_single_accuracy = []
     epoch_train_multi_accuracy = []
@@ -77,7 +81,7 @@ def main():
     epoch_test_multi_accuracy = []
 
 
-    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2'
+    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN'
     pathlib.Path(viz_path).mkdir(parents=True, exist_ok=True)
 
     start_writing_iteration = 5
@@ -93,8 +97,14 @@ def main():
         mean_train_accuracy = []
         test_accuracy = []
         mean_test_accuracy = []
-        train_epoch_loss = []
-        test_epoch_loss = []
+        train_epoch_cl_loss = []
+        test_epoch_cl_loss = []
+
+        train_epoch_am_loss = []
+        test_epoch_am_loss = []
+
+        train_epoch_total_loss = []
+        test_epoch_total_loss = []
 
         train_multi_accuracy = []
         mean_train_multi_accuracy = []
@@ -102,7 +112,7 @@ def main():
         mean_test_multi_accuracy = []
 
 
-        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2/train'
+        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN/train'
         pathlib.Path(train_path).mkdir(parents=True, exist_ok=True)
         epoch_path = train_path+'/epoch_'+str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -117,16 +127,30 @@ def main():
             labels = torch.Tensor(label_idx_list).to(device).long()
 
             # logits = model(input_tensor)
-            logits, heatmap = gcam(input_tensor, labels)
+            logits_cl, logits_am, heatmap, masked_image = gcam(input_tensor, labels)
+
             indices = torch.Tensor(label_idx_list).long().to(device)
             class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
 
-            loss = loss_fn(logits, class_onehot)
+            cl_loss = loss_fn(logits_cl, class_onehot)
+
+            am_loss = nn.Softmax(dim=1)(logits_am)
+            am_loss, am_labels = am_loss.topk(num_of_labels)
+            am_loss = am_loss.sum() / am_loss.size(1)
+
+            total_loss = cl_loss * loss_factor
+            total_loss += am_loss * am_factor
+
+            if gcam.AM_enabled():
+                loss = total_loss
+            else:
+                loss = cl_loss
+
             loss.backward()
             optimizer.step()
 
             # Single label evaluation
-            y_pred = logits.detach().argmax()
+            y_pred = logits_cl.detach().argmax()
             y_pred = y_pred.view(-1)
             gt, _ = indices.sort(descending=True)
             gt = gt.view(-1)
@@ -134,19 +158,23 @@ def main():
             total_train_single_accuracy += acc.detach().cpu()
 
             # Multi label evaluation
-            _, y_pred_multi = logits.detach().topk(num_of_labels)
+            _, y_pred_multi = logits_cl.detach().topk(num_of_labels)
             y_pred_multi = y_pred_multi.view(-1)
             acc_multi = (y_pred_multi == gt).sum() / num_of_labels
             total_train_multi_accuracy += acc_multi.detach().cpu()
 
             if i % 100 == 0:
                 print(i)
-                print('Loss per image: {:.3f}'.format(loss.detach().item()))
+                print('Classification Loss per image: {:.3f}'.format(cl_loss.detach().item()))
+                print('AM Loss per image: {:.3f}'.format(am_loss.detach().item()))
+                print('Total Loss per image: {:.3f}'.format(total_loss.detach().item()))
                 train_accuracy.append(acc.detach().cpu())
                 train_multi_accuracy.append(acc_multi.detach().cpu())
 
             if i % 200 == 0:
-                train_epoch_loss.append(loss.detach().item())
+                train_epoch_cl_loss.append(cl_loss.detach().item())
+                train_epoch_am_loss.append(am_loss.detach().item())
+                train_epoch_total_loss.append(am_loss.detach().item())
                 if len(train_accuracy) > start_writing_iteration:
                     acc_mean = (sum(train_accuracy) / len(train_accuracy)).detach().cpu()
                     mean_train_accuracy.append(acc_mean)
@@ -155,21 +183,28 @@ def main():
                     print('Average train single label accuracy: {:.3f}'.format(acc_mean))
                     print('Average train multi label accuracy: {:.3f}'.format(acc_multi_mean))
 
-                _, y_pred = logits.detach().topk(num_of_labels)
+                _, y_pred = logits_cl.detach().topk(num_of_labels)
+
                 y_pred = y_pred.view(-1)
                 gt, _ = y_pred.sort(descending=True)
 
                 predicted_categories = [categories[x] for x in gt]
 
                 labels = [categories[label_idx] for label_idx in label_idx_list]
-                loss = loss.detach().item()
-                dir_name = str(i)+'_labels_'+'_'.join(labels)+'_predicted_'+'_'.join(predicted_categories) +'_loss_'+str(loss)
+                cl_loss = loss.detach().item()
+                dir_name = str(i)+'_labels_'+'_'.join(labels)+'_predicted_'+'_'.join(predicted_categories) +'_loss_'+str(cl_loss)
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
                 img = sample['image'].squeeze().numpy()
                 img_orig = Image.fromarray(img)
-                img_orig.save(dir_path + '/' + 'orig.jpg')
+
+                # for comparasion to am score: should be bigger
+                y_scores, _ = nn.Softmax(dim=1)(logits_cl.detach()).topk(num_of_labels)
+                y_scores = y_scores.sum() / y_scores.size(1)
+
+                img_orig.save(dir_path + '/' + 'orig_'+str(y_scores.detach().item())+'.jpg')
+
 
                 htm = heatmap.squeeze().cpu().detach().numpy()
                 #plt.imshow(htm)
@@ -179,19 +214,34 @@ def main():
                 visualization, heatmap = show_cam_on_image(img, htm, True)
                 visualization_m = Image.fromarray(visualization)
                 visualization_m.save(dir_path+'/'+'vis.jpg')
-                #plt.imshow(visualization)
-                #plt.show()
-                #plt.imshow(heatmap)
-                #plt.show()
-                #print()
 
+                masked_image = denorm(masked_image.detach(), mean, std)
+                masked_image = (masked_image.squeeze().permute([1, 2, 0]).cpu().detach().numpy() * 255).astype(
+                    np.uint8)
+                masked_image_m = Image.fromarray(masked_image)
 
-                if len(train_epoch_loss) > 1:
+                am_loss = am_loss.detach().item()
+                predicted_am_categories = [categories[x] for x in am_labels]
+                masked_image_m.save(dir_path + '/' + 'masked_img_'+'_'.join('predicted_am_categories')+'_'+str(am_loss)+'.jpg')
+
+                if len(train_epoch_cl_loss) > 1:
                     #mx = max(epoch_loss)
                     #smooth = [l / mx for l in epoch_loss]
                     x_loss = np.arange(0, i+1, 200)
-                    plt.plot(x_loss, train_epoch_loss)
-                    plt.savefig(epoch_path+'/epoch_loss.jpg')
+
+                    plt.plot(x_loss, train_epoch_cl_loss)
+                    plt.savefig(epoch_path+'/epoch_cl_loss.jpg')
+                    plt.close()
+
+
+                    plt.plot(x_loss, train_epoch_am_loss)
+                    plt.savefig(epoch_path + '/epoch_am_loss.jpg')
+                    plt.close()
+
+                    plt.plot(x_loss, train_epoch_total_loss)
+                    plt.savefig(epoch_path + '/epoch_total_loss.jpg')
+                    plt.close()
+
                     #plt.plot(smooth)
                     #plt.savefig(epoch_path + '/smooth.jpg')
                     plt.close()
@@ -205,7 +255,7 @@ def main():
                         plt.close()
             i+=1
 
-        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2/test'
+        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN/test'
         pathlib.Path(test_path).mkdir(parents=True, exist_ok=True)
         epoch_path = test_path + '/epoch_' + str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -220,14 +270,20 @@ def main():
             labels = torch.Tensor(label_idx_list).to(device).long()
 
             # logits = model(input_tensor)
-            logits, heatmap = gcam(input_tensor, labels)
+            logits_cl, logits_am, heatmap, masked_image = gcam(input_tensor, labels)
             indices = torch.Tensor(label_idx_list).long().to(device)
             class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
 
-            loss = loss_fn(logits, class_onehot)
+            cl_loss = loss_fn(logits_cl, class_onehot)
+
+            total_loss = cl_loss * loss_factor
+            am_loss = nn.Softmax(dim=1)(logits_am)
+            am_loss, _ = am_loss.topk(num_of_labels)
+            am_loss = am_loss.sum() / am_loss.size(1)
+            total_loss += am_loss * am_factor
 
             # Single label evaluation
-            y_pred = logits.detach().argmax()
+            y_pred = logits_cl.detach().argmax()
             y_pred = y_pred.view(-1)
             gt, _ = indices.sort(descending=True)
             gt = gt.view(-1)
@@ -235,7 +291,7 @@ def main():
             total_test_single_accuracy += acc.detach().cpu()
 
             # Multi label evaluation
-            _, y_pred_multi = logits.detach().topk(num_of_labels)
+            _, y_pred_multi = logits_cl.detach().topk(num_of_labels)
             y_pred_multi = y_pred_multi.view(-1)
             acc_multi = (y_pred_multi == gt).sum() / num_of_labels
             total_test_multi_accuracy += acc_multi.detach().cpu()
@@ -243,12 +299,16 @@ def main():
 
             if i % 25 == 0:
                 print(i)
-                print('Loss per image: {:.3f}'.format(loss.detach().item()))
+                print('Classification Loss per image: {:.3f}'.format(cl_loss.detach().item()))
+                print('AM Loss per image: {:.3f}'.format(am_loss.detach().item()))
+                print('Total Loss per image: {:.3f}'.format(total_loss.detach().item()))
                 test_accuracy.append(acc.detach().cpu())
                 test_multi_accuracy.append(acc_multi.detach().cpu())
 
             if i % 50 == 0:
-                test_epoch_loss.append(loss.detach().item())
+                test_epoch_cl_loss.append(cl_loss.detach().item())
+                test_epoch_am_loss.append(am_loss.detach().item())
+                test_epoch_total_loss.append(total_loss.detach().item())
                 if len(test_accuracy) > start_writing_iteration:
                     acc_mean = (sum(test_accuracy) / len(test_accuracy)).detach().cpu()
                     mean_test_accuracy.append(acc_mean)
@@ -257,22 +317,27 @@ def main():
                     print('Average test single label accuracy: {:.3f}'.format(acc_mean))
                     print('Average test multi label accuracy: {:.3f}'.format(acc_multi_mean))
 
-                _, y_pred = logits.detach().topk(num_of_labels)
+                _, y_pred = logits_cl.detach().topk(num_of_labels)
                 y_pred = y_pred.view(-1)
                 gt, _ = y_pred.sort(descending=True)
 
                 predicted_categories = [categories[x] for x in gt]
 
                 labels = [categories[label_idx] for label_idx in label_idx_list]
-                loss = loss.detach().item()
+                cl_loss = cl_loss.detach().item()
                 dir_name = str(i) + '_labels_' + '_'.join(labels) + '_predicted_' + '_'.join(
-                    predicted_categories) + '_loss_' + str(loss)
+                    predicted_categories) + '_loss_' + str(cl_loss)
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
                 img = sample['image'].squeeze().numpy()
                 img_orig = Image.fromarray(img)
-                img_orig.save(dir_path + '/' + 'orig.jpg')
+
+                # for comparasion to am score: should be bigger
+                y_scores, _ = nn.Softmax(dim=1)(logits_cl.detach()).topk(num_of_labels)
+                y_scores = y_scores.sum() / y_scores.size(1)
+
+                img_orig.save(dir_path + '/' + 'orig_'+str(y_scores.detach().item())+'.jpg')
 
                 htm = heatmap.squeeze().cpu().detach().numpy()
                 # plt.imshow(htm)
@@ -282,20 +347,32 @@ def main():
                 visualization, heatmap = show_cam_on_image(img, htm, True)
                 visualization_m = Image.fromarray(visualization)
                 visualization_m.save(dir_path+'/'+'vis.jpg')
+                masked_image = denorm(masked_image.detach(), mean, std)
+                masked_image = (masked_image.squeeze().permute([1, 2, 0]).cpu().detach().numpy() * 255).astype(
+                    np.uint8)
+                masked_image_m = Image.fromarray(masked_image)
+                am_loss = am_loss.detach().item()
+                masked_image_m.save(dir_path + '/' + 'masked_img_'+str(am_loss)+'.jpg')
                 # plt.imshow(visualization)
                 # plt.show()
                 # plt.imshow(heatmap)
                 # plt.show()
                 # print()
 
-                if len(test_epoch_loss) > 1:
+                if len(test_epoch_cl_loss) > 1:
                     # mx = max(epoch_loss)
                     # smooth = [l / mx for l in epoch_loss]
                     x_loss = np.arange(0, i + 1, 50)
-                    plt.plot(x_loss, test_epoch_loss)
-                    plt.savefig(epoch_path + '/epoch_loss.jpg')
-                    # plt.plot(smooth)
-                    # plt.savefig(epoch_path + '/smooth.jpg')
+                    plt.plot(x_loss, test_epoch_cl_loss)
+                    plt.savefig(epoch_path + '/epoch_cl_loss.jpg')
+                    plt.close()
+
+                    plt.plot(x_loss, test_epoch_am_loss)
+                    plt.savefig(epoch_path + '/epoch_am_loss.jpg')
+                    plt.close()
+
+                    plt.plot(x_loss, test_epoch_total_loss)
+                    plt.savefig(epoch_path + '/epoch_total_loss.jpg')
                     plt.close()
                     if i % 50 == 0 and i > start_writing_iteration * 25:
                         x_acc = np.arange(150, i + 1, 50)
@@ -309,6 +386,17 @@ def main():
 
         print("finished epoch number:")
         print(epoch)
+
+        gcam.increase_epoch_count()
+
+        chkpt_path = 'C:/Users/Student1/PycharmProjects/GCAM/checkpoints/'+str(epoch)
+        pathlib.Path(train_path).mkdir(parents=True, exist_ok=True)
+
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+        }, chkpt_path)
 
         epoch_train_single_accuracy.append(total_train_single_accuracy / num_train_samples)
         print('Average epoch single train accuracy: {:.3f}'.format(total_train_single_accuracy / num_train_samples))

@@ -34,3 +34,8 @@ def show_cam_on_image(img: np.ndarray, mask: np.ndarray, without_norm : bool) ->
     cam = 0.5 * heatmap + 0.5 * np.float32(img)
     cam = cam / np.max(cam)
     return np.uint8(255 * cam), heatmap
+
+def denorm(tensor, mean, std):
+    for t, m, s in zip(tensor, mean, std):
+        t.mul_(s).add_(m)
+    return tensor

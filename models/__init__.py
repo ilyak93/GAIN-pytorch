@@ -1,1 +1,1 @@
-from .gcam import GCAM
+from .GAIN import GAIN

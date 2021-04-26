@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from dataloaders import data
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm
 
-from models.GAIN import GCAM
+from models.GAIN import GAIN
 from PIL import Image
 from tensorboardX import SummaryWriter
 
@@ -70,7 +70,7 @@ def main():
     epochs = 10
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-    gcam = GCAM(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5, mean=mean, std=std)
+    gain = GAIN(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5, mean=mean, std=std)
 
     loss_factor = 0.5
     am_factor = 0.5
@@ -127,7 +127,7 @@ def main():
             labels = torch.Tensor(label_idx_list).to(device).long()
 
             # logits = model(input_tensor)
-            logits_cl, logits_am, heatmap, masked_image = gcam(input_tensor, labels)
+            logits_cl, logits_am, heatmap, masked_image = gain(input_tensor, labels)
 
             indices = torch.Tensor(label_idx_list).long().to(device)
             class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
@@ -270,7 +270,7 @@ def main():
             labels = torch.Tensor(label_idx_list).to(device).long()
 
             # logits = model(input_tensor)
-            logits_cl, logits_am, heatmap, masked_image = gcam(input_tensor, labels)
+            logits_cl, logits_am, heatmap, masked_image = gain(input_tensor, labels)
             indices = torch.Tensor(label_idx_list).long().to(device)
             class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
 
@@ -387,7 +387,7 @@ def main():
         print("finished epoch number:")
         print(epoch)
 
-        gcam.increase_epoch_count()
+        gain.increase_epoch_count()
 
         chkpt_path = 'C:/Users/Student1/PycharmProjects/GCAM/checkpoints/'+str(epoch)
         pathlib.Path(train_path).mkdir(parents=True, exist_ok=True)

@@ -86,7 +86,12 @@ def main():
 
     start_writing_iteration = 5
 
-    for epoch in range(epochs):
+    checkpoint = torch.load('C:/Users/Student1/PycharmProjects/GCAM/checkpoints/4-epoch-chkpnt')
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    chkpnt_epoch = checkpoint['epoch']+1
+
+    for epoch in range(chkpnt_epoch, epochs):
         total_train_single_accuracy = 0
         total_train_multi_accuracy = 0
         total_test_single_accuracy = 0
@@ -135,7 +140,8 @@ def main():
             cl_loss = loss_fn(logits_cl, class_onehot)
 
             am_loss = nn.Softmax(dim=1)(logits_am)
-            am_loss, am_labels = am_loss.topk(num_of_labels)
+            _, am_labels = am_loss.topk(num_of_labels)
+            am_loss = am_loss[labels]
             am_loss = am_loss.sum() / am_loss.size(1)
 
             total_loss = cl_loss * loss_factor
@@ -222,7 +228,7 @@ def main():
 
                 am_loss = am_loss.detach().item()
                 predicted_am_categories = [categories[x] for x in am_labels]
-                masked_image_m.save(dir_path + '/' + 'masked_img_'+'_'.join('predicted_am_categories')+'_'+str(am_loss)+'.jpg')
+                masked_image_m.save(dir_path + '/' + 'masked_img_'+'_'.join(predicted_am_categories)+'_'+str(am_loss)+'.jpg')
 
                 if len(train_epoch_cl_loss) > 1:
                     #mx = max(epoch_loss)
@@ -278,7 +284,8 @@ def main():
 
             total_loss = cl_loss * loss_factor
             am_loss = nn.Softmax(dim=1)(logits_am)
-            am_loss, _ = am_loss.topk(num_of_labels)
+            am_loss, _ = am_loss[labels]
+            _, am_labels = am_loss.topk(num_of_labels)
             am_loss = am_loss.sum() / am_loss.size(1)
             total_loss += am_loss * am_factor
 
@@ -352,7 +359,9 @@ def main():
                     np.uint8)
                 masked_image_m = Image.fromarray(masked_image)
                 am_loss = am_loss.detach().item()
-                masked_image_m.save(dir_path + '/' + 'masked_img_'+str(am_loss)+'.jpg')
+                predicted_am_categories = [categories[x] for x in am_labels]
+                masked_image_m.save(dir_path + '/' + 'masked_img_'+ '_'.join(
+                    predicted_am_categories)+'_'+str(am_loss)+'.jpg')
                 # plt.imshow(visualization)
                 # plt.show()
                 # plt.imshow(heatmap)

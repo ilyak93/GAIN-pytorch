@@ -30,7 +30,7 @@ class GAIN(nn.Module):
         self._register_hooks(grad_layer)
 
         # sigma, omega for making the soft-mask
-        self.sigma = 0.01 #TODO: maybe to make it trainable, anyway think how to tune it, maybe hypertuning or other smart choice.
+        self.sigma = 0.25 #TODO: maybe to make it trainable, anyway think how to tune it, maybe hypertuning or other smart choice.
         self.omega = 10 #TODO: maybe to make it trainable, anyway think how to tune it, maybe hypertuning or other smart choice.
 
         self.pretraining_epochs = pretraining_epochs
@@ -110,8 +110,6 @@ class GAIN(nn.Module):
         # Ac = F.interpolate(Ac, size=images.size()[2:], mode='bilinear', align_corners=False)
         Ac = F.upsample_bilinear(Ac, size=images.size()[2:])
         heatmap = Ac
-
-        logits_am = None
 
         Ac_min = Ac.min()
         Ac_max = Ac.max()

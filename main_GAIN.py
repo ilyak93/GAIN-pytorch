@@ -67,13 +67,13 @@ def main():
     print(num_test_samples)
 
 
-    epochs = 10
+    epochs = 15
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-    gain = GAIN(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5, mean=mean, std=std, pretrained=True)
+    gain = GAIN(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5, mean=mean, std=std, pretrained=True) #the model isn't pretrained, but handle it as it is, to train with am_loss
 
-    loss_factor = 0.5
-    am_factor = 0.5
+    cl_factor = 0.9
+    am_factor = 0.1
 
     epoch_train_single_accuracy = []
     epoch_train_multi_accuracy = []
@@ -81,11 +81,12 @@ def main():
     epoch_test_multi_accuracy = []
 
 
-    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN'
+    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am_factor_01'
     pathlib.Path(viz_path).mkdir(parents=True, exist_ok=True)
 
     start_writing_iteration = 5
 
+    #chkpnt_epoch = 0
     checkpoint = torch.load('C:/Users/Student1/PycharmProjects/GCAM/checkpoints/4-epoch-chkpnt')
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
@@ -96,6 +97,12 @@ def main():
         total_train_multi_accuracy = 0
         total_test_single_accuracy = 0
         total_test_multi_accuracy = 0
+
+        sigmas = []
+        mean_sigmas = []
+
+        omegas = []
+        mean_omegas = []
 
 
         train_accuracy = []
@@ -117,7 +124,7 @@ def main():
         mean_test_multi_accuracy = []
 
 
-        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN/train'
+        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am_factor_01/train'
         pathlib.Path(train_path).mkdir(parents=True, exist_ok=True)
         epoch_path = train_path+'/epoch_'+str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -139,14 +146,14 @@ def main():
 
             cl_loss = loss_fn(logits_cl, class_onehot)
 
-            am_loss = nn.Softmax(dim=1)(logits_am)
-            _, am_labels = am_loss.topk(num_of_labels)
-            am_loss = am_loss.view(-1)[labels]
-            am_loss = am_loss.sum() / am_loss.size(0)
+            scores = nn.Softmax(dim=1)(logits_am)
+            #scores = logits_am
+            _, am_labels = scores.topk(num_of_labels)
+            labels_scores = scores.view(-1)[labels]
+            am_loss = labels_scores.sum() / labels_scores.size(0)
 
-            total_loss = cl_loss * loss_factor
-            total_loss += am_loss * am_factor
-
+            total_loss = cl_loss * cl_factor + am_loss * am_factor
+            
             if gain.AM_enabled():
                 loss = total_loss
             else:
@@ -154,6 +161,7 @@ def main():
 
             loss.backward()
             optimizer.step()
+
 
             # Single label evaluation
             y_pred = logits_cl.detach().argmax()
@@ -177,6 +185,8 @@ def main():
                 train_accuracy.append(acc.detach().cpu())
                 train_multi_accuracy.append(acc_multi.detach().cpu())
 
+
+
             if i % 200 == 0:
                 train_epoch_cl_loss.append(cl_loss.detach().item())
                 train_epoch_am_loss.append(am_loss.detach().item())
@@ -197,7 +207,7 @@ def main():
                 predicted_categories = [categories[x] for x in gt]
 
                 labels = [categories[label_idx] for label_idx in label_idx_list]
-                cl_loss = loss.detach().item()
+                cl_loss = cl_loss.detach().item()
                 dir_name = str(i)+'_labels_'+'_'.join(labels)+'_predicted_'+'_'.join(predicted_categories) +'_loss_'+str(cl_loss)
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
@@ -261,7 +271,7 @@ def main():
                         plt.close()
             i+=1
 
-        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN/test'
+        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am_factor_01/test'
         pathlib.Path(test_path).mkdir(parents=True, exist_ok=True)
         epoch_path = test_path + '/epoch_' + str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -282,13 +292,12 @@ def main():
 
             cl_loss = loss_fn(logits_cl, class_onehot)
 
-            total_loss = cl_loss * loss_factor
-            am_loss = nn.Softmax(dim=1)(logits_am)
-            am_loss = am_loss.view(-1)[labels]
-            am_loss = am_loss.sum() / am_loss.size(0)
-            _, am_labels = am_loss.topk(num_of_labels)
-            am_loss = am_loss.sum() / am_loss.size(1)
-            total_loss += am_loss * am_factor
+            scores = nn.Softmax(dim=1)(logits_am)
+            _, am_labels = scores.topk(num_of_labels)
+            labels_scores = scores.view(-1)[labels]
+            am_loss = labels_scores.sum() / labels_scores.size(0)
+
+            total_loss = cl_loss * cl_factor + am_loss * am_factor
 
             # Single label evaluation
             y_pred = logits_cl.detach().argmax()
@@ -360,7 +369,7 @@ def main():
                     np.uint8)
                 masked_image_m = Image.fromarray(masked_image)
                 am_loss = am_loss.detach().item()
-                predicted_am_categories = [categories[x] for x in am_labels]
+                predicted_am_categories = [categories[x] for x in am_labels.view(-1)]
                 masked_image_m.save(dir_path + '/' + 'masked_img_'+ '_'.join(
                     predicted_am_categories)+'_'+str(am_loss)+'.jpg')
                 # plt.imshow(visualization)
@@ -399,7 +408,7 @@ def main():
 
         gain.increase_epoch_count()
 
-        chkpt_path = 'C:/Users/Student1/PycharmProjects/GCAM/checkpoints/'+str(epoch)
+        chkpt_path = 'C:/Users/Student1/PycharmProjects/GCAM/checkpoints/am_01/'+str(epoch)
         pathlib.Path(train_path).mkdir(parents=True, exist_ok=True)
 
         torch.save({

@@ -117,10 +117,15 @@ class GAIN(nn.Module):
         mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
         masked_image = images - images * mask
 
-        #if self.enable_am:
+        for param in self.model.parameters():
+            param.requires_grad = False
+
         logits_am = self.model(masked_image)
 
-        return logits_cl, logits_am, heatmap, masked_image
+        for param in self.model.parameters():
+            param.requires_grad = True
+
+        return logits_cl, logits_am, heatmap, masked_image, mask
 
     def increase_epoch_count(self):
         self.cur_epoch += 1

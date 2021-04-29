@@ -211,7 +211,7 @@ def main():
 
                 labels = [categories[label_idx] for label_idx in label_idx_list]
                 cl_loss = cl_loss.detach().item()
-                dir_name = str(i)+'_loss_'+format(cl_loss, '.4f')
+                dir_name = str(i)+'_cl_loss_'+format(cl_loss, '.4f')+'_am_loss_'+format(am_loss, '.4f')
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
@@ -372,7 +372,7 @@ def main():
 
                 labels = [categories[label_idx] for label_idx in label_idx_list]
                 cl_loss = cl_loss.detach().item()
-                dir_name = str(i) + '_loss_' + format(cl_loss, '.4f')
+                dir_name = str(i) + '_cl_loss_' + format(cl_loss, '.4f') + '_am_loss_' + format(am_loss, '.4f')
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
@@ -425,7 +425,7 @@ def main():
                 if len(test_epoch_cl_loss) > 1:
                     # mx = max(epoch_loss)
                     # smooth = [l / mx for l in epoch_loss]
-                    x_loss = np.arange(0, i + 1, 200)
+                    x_loss = np.arange(0, i + 1, 50)
 
                     plt.plot(x_loss, test_epoch_cl_loss)
                     plt.savefig(epoch_path + '/epoch_cl_loss.jpg')

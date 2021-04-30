@@ -82,7 +82,7 @@ def main():
     epoch_test_multi_accuracy = []
 
 
-    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am_factor_01'
+    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am_factor_05_no_pretraining'
     pathlib.Path(viz_path).mkdir(parents=True, exist_ok=True)
 
     start_writing_iteration = 5
@@ -125,7 +125,7 @@ def main():
         mean_test_multi_accuracy = []
 
 
-        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am_factor_01/train'
+        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am_factor_05_no_pretraining/train'
         pathlib.Path(train_path).mkdir(parents=True, exist_ok=True)
         epoch_path = train_path+'/epoch_'+str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -211,7 +211,7 @@ def main():
 
                 labels = [categories[label_idx] for label_idx in label_idx_list]
                 cl_loss = cl_loss.detach().item()
-                dir_name = str(i)+'_cl_loss_'+format(cl_loss, '.4f')+'_am_loss_'+format(am_loss, '.4f')
+                dir_name = str(i)+format(cl_loss, '.4f')+format(am_labels_scores.sum().detach(), '.4f')
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
@@ -292,7 +292,7 @@ def main():
                         plt.close()
             i+=1
 
-        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am_factor_01/test'
+        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am_factor_05_no_pretraining/test'
         pathlib.Path(test_path).mkdir(parents=True, exist_ok=True)
         epoch_path = test_path + '/epoch_' + str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -372,7 +372,7 @@ def main():
 
                 labels = [categories[label_idx] for label_idx in label_idx_list]
                 cl_loss = cl_loss.detach().item()
-                dir_name = str(i) + '_cl_loss_' + format(cl_loss, '.4f') + '_am_loss_' + format(am_loss, '.4f')
+                dir_name = str(i)+format(cl_loss, '.4f')+format(am_labels_scores.sum().detach(), '.4f')
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
@@ -457,7 +457,7 @@ def main():
 
         gain.increase_epoch_count()
 
-        chkpt_path = 'C:/Users/Student1/PycharmProjects/GCAM/checkpoints/am_01/'
+        chkpt_path = 'C:/Users/Student1/PycharmProjects/GCAM/checkpoints/am_05_no_pretraining/'
         pathlib.Path(chkpt_path).mkdir(parents=True, exist_ok=True)
 
         torch.save({

@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from torchvision.models import vgg19, wide_resnet101_2, mobilenet_v2
 import numpy as np
 import matplotlib.pyplot as plt
-from torchviz import make_dot
+#from torchviz import make_dot
 
 from dataloaders import data
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm
@@ -82,7 +82,7 @@ def main():
     epoch_test_multi_accuracy = []
 
 
-    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am_factor_05_no_pretraining'
+    viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am05_no_p'
     pathlib.Path(viz_path).mkdir(parents=True, exist_ok=True)
 
     start_writing_iteration = 5
@@ -125,7 +125,7 @@ def main():
         mean_test_multi_accuracy = []
 
 
-        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am_factor_05_no_pretraining/train'
+        train_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am05_no_p/train'
         pathlib.Path(train_path).mkdir(parents=True, exist_ok=True)
         epoch_path = train_path+'/epoch_'+str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -207,11 +207,8 @@ def main():
                 y_pred = y_pred.view(-1)
                 gt, _ = y_pred.sort(descending=True)
 
-                predicted_categories = [categories[x] for x in gt]
-
-                labels = [categories[label_idx] for label_idx in label_idx_list]
                 cl_loss = cl_loss.detach().item()
-                dir_name = str(i)+format(cl_loss, '.4f')+format(am_labels_scores.sum().detach(), '.4f')
+                dir_name = str(i)+'_cl_'+format(cl_loss, '.4f')+'_am_'+format(am_labels_scores.sum().detach(), '.4f')
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
@@ -292,7 +289,7 @@ def main():
                         plt.close()
             i+=1
 
-        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am_factor_05_no_pretraining/test'
+        test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am05_no_p/test'
         pathlib.Path(test_path).mkdir(parents=True, exist_ok=True)
         epoch_path = test_path + '/epoch_' + str(epoch)
         pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
@@ -323,11 +320,6 @@ def main():
             # g.save('grad_viz', train_path)
 
             total_loss = cl_loss * cl_factor + am_loss * am_factor
-
-            if gain.AM_enabled():
-                loss = total_loss
-            else:
-                loss = cl_loss
 
             # Single label evaluation
             y_pred = logits_cl.detach().argmax()
@@ -368,11 +360,9 @@ def main():
                 y_pred = y_pred.view(-1)
                 gt, _ = y_pred.sort(descending=True)
 
-                predicted_categories = [categories[x] for x in gt]
 
-                labels = [categories[label_idx] for label_idx in label_idx_list]
                 cl_loss = cl_loss.detach().item()
-                dir_name = str(i)+format(cl_loss, '.4f')+format(am_labels_scores.sum().detach(), '.4f')
+                dir_name = str(i)+'_cl_'+format(cl_loss, '.4f')+'_am_'+format(am_labels_scores.sum().detach(), '.4f')
                 dir_path = epoch_path + '/' + dir_name
                 pathlib.Path(dir_path).mkdir(parents=True, exist_ok=True)
 
@@ -457,7 +447,7 @@ def main():
 
         gain.increase_epoch_count()
 
-        chkpt_path = 'C:/Users/Student1/PycharmProjects/GCAM/checkpoints/am_05_no_pretraining/'
+        chkpt_path = 'C:/Users/Student1/PycharmProjects/GCAM/checkpoints/am_05_no_p/'
         pathlib.Path(chkpt_path).mkdir(parents=True, exist_ok=True)
 
         torch.save({

@@ -133,9 +133,11 @@ def main():
         model.train(True)
         i = 0
         for sample in rds.datasets['seq_train']:
-            input_tensor = preprocess_image(sample['image'].squeeze().numpy(), mean=mean, std=std).to(device)
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
+            if num_of_labels > 1:
+                continue
+            input_tensor = preprocess_image(sample['image'].squeeze().numpy(), mean=mean, std=std).to(device)
             optimizer.zero_grad()
             labels = torch.Tensor(label_idx_list).to(device).long()
 
@@ -297,10 +299,11 @@ def main():
         model.train(False)
         i = 0
         for sample in rds.datasets['seq_test']:
-            input_tensor = preprocess_image(sample['image'].squeeze().numpy(), mean=mean, std=std).to(device)
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
-            optimizer.zero_grad()
+            if num_of_labels > 1:
+                continue
+            input_tensor = preprocess_image(sample['image'].squeeze().numpy(), mean=mean, std=std).to(device)
             labels = torch.Tensor(label_idx_list).to(device).long()
 
             # logits = model(input_tensor)

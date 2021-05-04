@@ -1,21 +1,36 @@
+from random import choice
+
 import cv2
 import numpy as np
 import torch
-from torchvision.transforms import Compose, Normalize, ToTensor
+from PIL import Image
+from torchvision.transforms import Compose, Normalize, ToTensor, ToPILImage, \
+    AutoAugmentPolicy
+import torchvision
 
-
-def preprocess_image(img: np.ndarray, mean=None, std=None) -> torch.Tensor:
+def preprocess_image(img , train , mean=None, std=None) -> torch.Tensor:
     if std is None:
         std = [0.5, 0.5, 0.5]
     if mean is None:
         mean = [0.5, 0.5, 0.5]
 
-    preprocessing = Compose([
-        ToTensor(),
-        Normalize(mean=mean, std=std)
-    ])
+    ds_pls = [AutoAugmentPolicy.IMAGENET, AutoAugmentPolicy.CIFAR10, AutoAugmentPolicy.SVHN]
+    random_policy = choice(ds_pls)
 
-    return preprocessing(img.copy()).unsqueeze(0)
+    if train == True:
+        preprocessing = Compose([
+            Image.fromarray,
+            torchvision.transforms.AutoAugment(random_policy),
+            ToTensor(),
+            Normalize(mean=mean, std=std)
+        ])
+    else:
+        preprocessing = Compose([
+            ToTensor(),
+            Normalize(mean=mean, std=std)
+        ])
+
+    return preprocessing(img).unsqueeze(0)
 
 
 def deprocess_image(img):

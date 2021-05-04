@@ -7,14 +7,10 @@ from utils.image import denorm
 
 
 class GAIN(nn.Module):
-    def __init__(self, model, grad_layer, num_classes, pretraining_epochs, mean, std, pretrained=False):
+    def __init__(self, model, grad_layer, num_classes, pretraining_epochs):
         super(GAIN, self).__init__()
 
         self.model = model
-
-        self.mean = mean
-
-        self.std = std
 
         # print(self.model)
         self.grad_layer = grad_layer
@@ -36,7 +32,7 @@ class GAIN(nn.Module):
         self.pretraining_epochs = pretraining_epochs
         self.cur_epoch = 0
         self.enable_am = False
-        if pretrained:
+        if self.cur_epoch >= self.pretraining_epochs:
             self.enable_am = True
 
     def _register_hooks(self, grad_layer):

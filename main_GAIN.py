@@ -98,6 +98,7 @@ def main():
         "C:/Users/Student1/PycharmProjects/GCAM" + "/pretraining_" + datetime.datetime.now().strftime(
             '%Y-%m-%d_%H-%M-%S'))
     i=0
+    num_train_samples = 0
     for epoch in range(chkpnt_epoch, epochs):
 
         total_train_single_accuracy = 0
@@ -186,6 +187,8 @@ def main():
             acc = (y_pred == gt).sum()
             total_train_single_accuracy += acc.detach().cpu()
             i += 1
+            if epoch == 0:
+                num_train_samples += 1
 
             # Multi label evaluation
             # _, y_pred_multi = logits_cl.detach().topk(num_of_labels)
@@ -308,7 +311,6 @@ def main():
                         plt.savefig(epoch_path + '/train_multi_accuracy.jpg')
                         plt.close()
             '''
-        num_train_samples = i
         # test_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am05_p/test'
         # pathlib.Path(test_path).mkdir(parents=True, exist_ok=True)
         # epoch_path = test_path + '/epoch_' + str(epoch)
@@ -496,20 +498,20 @@ def main():
         #    'optimizer_state_dict': optimizer.state_dict(),
         # }, chkpt_path + str(epoch))
 
-        epoch_train_am_ls.append(epoch_train_am_loss / num_train_samples)
+        #epoch_train_am_ls.append(epoch_train_am_loss / num_train_samples)
         print('Average epoch train am loss: {:.3f}'.format(epoch_train_am_loss / num_train_samples))
-        epoch_train_cl_ls.append(epoch_train_cl_loss / num_train_samples)
+        #epoch_train_cl_ls.append(epoch_train_cl_loss / num_train_samples)
         print('Average epoch train cl loss: {:.3f}'.format(epoch_train_cl_loss / num_train_samples))
-        epoch_train_total_ls.append(epoch_train_total_loss / num_train_samples)
+        #epoch_train_total_ls.append(epoch_train_total_loss / num_train_samples)
         print('Average epoch train total loss: {:.3f}'.format(epoch_train_total_loss / num_train_samples))
 
-        epoch_train_single_accuracy.append(total_train_single_accuracy / num_train_samples)
+        #epoch_train_single_accuracy.append(total_train_single_accuracy / num_train_samples)
         print('Average epoch single train accuracy: {:.3f}'.format(total_train_single_accuracy / num_train_samples))
 
         # epoch_train_multi_accuracy.append(total_train_multi_accuracy / num_train_samples)
         # print('Average epoch multi train accuracy: {:.3f}'.format(total_train_multi_accuracy / num_train_samples))
 
-        epoch_test_single_accuracy.append(total_test_single_accuracy / num_test_samples)
+        #epoch_test_single_accuracy.append(total_test_single_accuracy / num_test_samples)
         print('Average epoch single test accuracy: {:.3f}'.format(total_test_single_accuracy / num_test_samples))
 
         # epoch_test_multi_accuracy.append(total_test_multi_accuracy / num_test_samples)
@@ -539,12 +541,10 @@ def main():
         plt.savefig(viz_path + '/epoch_test_multi_accuracy.jpg')
         plt.close()
         '''
-        if epoch > 0:
-            writer.add_scalar('Per_Epoch/train/cl_loss', epoch_train_cl_loss / num_train_samples, epoch)
-            writer.add_scalar('Per_Epoch/train/am_loss', epoch_train_am_loss / num_train_samples, epoch)
-            writer.add_scalar('Per_Epoch/train/total_loss', epoch_train_total_loss / num_train_samples, epoch)
-            writer.add_scalar('Per_Epoch/train/cl_accuracy', total_train_single_accuracy / num_train_samples, epoch)
-
+        writer.add_scalar('Per_Epoch/train/cl_loss', epoch_train_cl_loss / num_train_samples, epoch)
+        writer.add_scalar('Per_Epoch/train/am_loss', epoch_train_am_loss / num_train_samples, epoch)
+        writer.add_scalar('Per_Epoch/train/total_loss', epoch_train_total_loss / num_train_samples, epoch)
+        writer.add_scalar('Per_Epoch/train/cl_accuracy', total_train_single_accuracy / num_train_samples, epoch)
         writer.add_scalar('Per_Epoch/test/cl_accuracy', total_test_single_accuracy / num_test_samples, epoch)
 
 

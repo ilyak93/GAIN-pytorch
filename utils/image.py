@@ -4,8 +4,8 @@ import cv2
 import numpy as np
 import torch
 from PIL import Image
-from torchvision.transforms import Compose, Normalize, ToTensor, ToPILImage, \
-    AutoAugmentPolicy
+from torchvision.transforms import Compose, Normalize, ToTensor, \
+    AutoAugmentPolicy, RandomHorizontalFlip
 import torchvision
 
 def preprocess_image(img , train , mean=None, std=None) -> torch.Tensor:
@@ -21,16 +21,24 @@ def preprocess_image(img , train , mean=None, std=None) -> torch.Tensor:
         preprocessing = Compose([
             Image.fromarray,
             torchvision.transforms.AutoAugment(random_policy),
+            RandomHorizontalFlip(),
             ToTensor(),
             Normalize(mean=mean, std=std)
         ])
-    else:
-        preprocessing = Compose([
-            ToTensor(),
-            Normalize(mean=mean, std=std)
+        preprocessing_ret_augmented = Compose([
+            Image.fromarray,
+            torchvision.transforms.AutoAugment(random_policy),
+            RandomHorizontalFlip(),
         ])
 
-    return preprocessing(img).unsqueeze(0)
+        return preprocessing(img).unsqueeze(0), preprocessing_ret_augmented(img)
+
+    preprocessing = Compose([
+        ToTensor(),
+        Normalize(mean=mean, std=std)
+    ])
+
+    return preprocessing(img).unsqueeze(0), None
 
 
 def deprocess_image(img):

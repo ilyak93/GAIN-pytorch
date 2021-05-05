@@ -74,14 +74,14 @@ def main():
     cl_factor = 0.5
     am_factor = 0.5
 
-    epoch_train_single_accuracy = []
+    #epoch_train_single_accuracy = []
     # epoch_train_multi_accuracy = []
-    epoch_test_single_accuracy = []
+    #epoch_test_single_accuracy = []
     # epoch_test_multi_accuracy = []
 
-    epoch_train_am_ls = []
-    epoch_train_cl_ls = []
-    epoch_train_total_ls = []
+    #epoch_train_am_ls = []
+    #epoch_train_cl_ls = []
+    #epoch_train_total_ls = []
 
     # viz_path = 'C:/Users/Student1/PycharmProjects/GCAM/exp2_GAIN_am05_p'
     # pathlib.Path(viz_path).mkdir(parents=True, exist_ok=True)
@@ -133,6 +133,7 @@ def main():
         # epoch_path = train_path + '/epoch_' + str(epoch)
         # pathlib.Path(epoch_path).mkdir(parents=True, exist_ok=True)
         model.train(True)
+        train_viz = 0
         for sample in rds.datasets['rnd_train']:
 
             label_idx_list = sample['label/idx']
@@ -140,8 +141,8 @@ def main():
             if num_of_labels > 1:
                 continue
 
-            input_tensor = preprocess_image(sample['image'].squeeze().numpy(), train=True, mean=mean, std=std).to(
-                device)
+            input_tensor, input_image = preprocess_image(sample['image'].squeeze().numpy(), train=True, mean=mean, std=std)
+            input_tensor = input_tensor.to(device)
             optimizer.zero_grad()
             labels = torch.Tensor(label_idx_list).to(device).long()
 
@@ -196,6 +197,21 @@ def main():
             # acc_multi = (y_pred_multi == gt).sum() / num_of_labels
             # total_train_multi_accuracy += acc_multi.detach().cpu()
 
+            if train_viz < 2:
+                htm = heatmap.squeeze().cpu().detach().numpy()
+                htm = deprocess_image(htm)
+                visualization, heatmap = show_cam_on_image(np.asarray(input_image), htm, True)
+                viz = torch.from_numpy(visualization).unsqueeze(0)
+                augmented = torch.tensor(np.asarray(input_image)).unsqueeze(0)
+                orig = sample['image']
+                orig_viz = torch.cat((orig, augmented, viz), 0)
+                grid = torchvision.utils.make_grid(orig_viz.permute([0, 3, 1, 2]))
+                gt = [categories[x] for x in label_idx_list]
+                writer.add_image(tag='Train_Heatmaps/image_' + str(i) + '_' + '_'.join(gt),
+                                 img_tensor=grid, global_step=epoch,
+                                 dataformats='CHW')
+                train_viz += 1
+
             '''
             if i % 100 == 0:
                 print(i)
@@ -204,7 +220,6 @@ def main():
                 print('Total Loss per image: {:.3f}'.format(total_loss.detach().item()))
                 train_accuracy.append(acc.detach().cpu())
                 train_multi_accuracy.append(acc_multi.detach().cpu())
-
             if i % 200 == 0:
                 train_epoch_cl_loss.append(cl_loss.detach().item())
                 train_epoch_am_loss.append(am_loss.detach().item())
@@ -318,12 +333,15 @@ def main():
 
         model.train(False)
         j = 0
+        test = False
+        test_global_step = False
         for sample in rds.datasets['seq_test']:
+            test = True
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
             if num_of_labels > 1:
                 continue
-            input_tensor = preprocess_image(sample['image'].squeeze().numpy(), train=False, mean=mean, std=std).to(
+            input_tensor, _ = preprocess_image(sample['image'].squeeze().numpy(), train=False, mean=mean, std=std).to(
                 device)
             labels = torch.Tensor(label_idx_list).to(device).long()
 
@@ -429,6 +447,7 @@ def main():
                     writer.add_image(tag='Test_Heatmaps/image_' + str(j) + '_' + '_'.join(gt),
                                      img_tensor=grid, global_step=epoch,
                                      dataformats='CHW')
+                    test_global_step = True
                 '''
                 masked_image = denorm(masked_image.detach().squeeze(), mean, std)
                 masked_image = (masked_image.squeeze().permute([1, 2, 0]).cpu().detach().numpy() * 255).round().astype(
@@ -483,9 +502,12 @@ def main():
                         plt.close()
                 '''
             j += 1
+
         num_test_samples = j
         print("finished epoch number:")
         print(epoch)
+        print(test)
+        print(test_global_step)
 
         gain.increase_epoch_count()
 

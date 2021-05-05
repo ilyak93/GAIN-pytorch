@@ -341,8 +341,8 @@ def main():
             num_of_labels = len(label_idx_list)
             if num_of_labels > 1:
                 continue
-            input_tensor, _ = preprocess_image(sample['image'].squeeze().numpy(), train=False, mean=mean, std=std).to(
-                device)
+            input_tensor, _ = preprocess_image(sample['image'].squeeze().numpy(), train=False, mean=mean, std=std)
+            input_tensor = input_tensor.to(device)
             labels = torch.Tensor(label_idx_list).to(device).long()
 
             # logits = model(input_tensor)

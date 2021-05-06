@@ -61,16 +61,19 @@ def main():
                           output_dims=input_dims,
                           batch_size_dict=batch_size_dict)
 
-    num_train_samples = len(rds.datasets['seq_train'])
-    print(num_train_samples)
+    #num_train_samples = len(rds.datasets['seq_train'])
+    #print(num_train_samples)
 
-    num_test_samples = len(rds.datasets['seq_test'])
-    print(num_test_samples)
+    #num_test_samples = len(rds.datasets['seq_test'])
+    #print(num_test_samples)
+
+    test_first_before_train = True
 
     epochs = 30
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-    gain = GAIN(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5)
+    gain = GAIN(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5,
+                test_first_before_train=test_first_before_train)
     cl_factor = 0.5
     am_factor = 0.5
 
@@ -95,7 +98,7 @@ def main():
     # chkpnt_epoch = checkpoint['epoch']+1
 
     writer = SummaryWriter(
-        "C:/Users/Student1/PycharmProjects/GCAM" + "/pretraining_" + datetime.datetime.now().strftime(
+        "C:/Users/Student1/PycharmProjects/GCAM" + "/pretraining_5_" + datetime.datetime.now().strftime(
             '%Y-%m-%d_%H-%M-%S'))
     i=0
     num_train_samples = 0
@@ -136,6 +139,10 @@ def main():
         train_viz = 0
         for sample in rds.datasets['rnd_train']:
 
+            if i == 0:
+                i += 1
+                break
+
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
             if num_of_labels > 1:
@@ -164,8 +171,8 @@ def main():
 
             total_loss = cl_loss * cl_factor + am_loss * am_factor
 
-            epoch_train_am_loss += (cl_loss * cl_factor).detach().cpu().item()
-            epoch_train_cl_loss += (am_loss * am_factor).detach().cpu().item()
+            epoch_train_am_loss += (am_loss * am_factor).detach().cpu().item()
+            epoch_train_cl_loss += (cl_loss * cl_factor).detach().cpu().item()
             epoch_train_total_loss += total_loss.detach().cpu().item()
 
             writer.add_scalar('Per_Step/train/cl_loss', (cl_loss * cl_factor).detach().cpu().item(), i)
@@ -188,7 +195,9 @@ def main():
             acc = (y_pred == gt).sum()
             total_train_single_accuracy += acc.detach().cpu()
             i += 1
-            if epoch == 0:
+            if epoch == 0 and test_first_before_train == False:
+                num_train_samples += 1
+            if epoch == 1 and test_first_before_train == True:
                 num_train_samples += 1
 
             # Multi label evaluation
@@ -521,14 +530,15 @@ def main():
         # }, chkpt_path + str(epoch))
 
         #epoch_train_am_ls.append(epoch_train_am_loss / num_train_samples)
-        print('Average epoch train am loss: {:.3f}'.format(epoch_train_am_loss / num_train_samples))
-        #epoch_train_cl_ls.append(epoch_train_cl_loss / num_train_samples)
-        print('Average epoch train cl loss: {:.3f}'.format(epoch_train_cl_loss / num_train_samples))
-        #epoch_train_total_ls.append(epoch_train_total_loss / num_train_samples)
-        print('Average epoch train total loss: {:.3f}'.format(epoch_train_total_loss / num_train_samples))
+        if epoch > 0:
+            print('Average epoch train am loss: {:.3f}'.format(epoch_train_am_loss / num_train_samples))
+            #epoch_train_cl_ls.append(epoch_train_cl_loss / num_train_samples)
+            print('Average epoch train cl loss: {:.3f}'.format(epoch_train_cl_loss / num_train_samples))
+            #epoch_train_total_ls.append(epoch_train_total_loss / num_train_samples)
+            print('Average epoch train total loss: {:.3f}'.format(epoch_train_total_loss / num_train_samples))
 
-        #epoch_train_single_accuracy.append(total_train_single_accuracy / num_train_samples)
-        print('Average epoch single train accuracy: {:.3f}'.format(total_train_single_accuracy / num_train_samples))
+            #epoch_train_single_accuracy.append(total_train_single_accuracy / num_train_samples)
+            print('Average epoch single train accuracy: {:.3f}'.format(total_train_single_accuracy / num_train_samples))
 
         # epoch_train_multi_accuracy.append(total_train_multi_accuracy / num_train_samples)
         # print('Average epoch multi train accuracy: {:.3f}'.format(total_train_multi_accuracy / num_train_samples))
@@ -563,10 +573,11 @@ def main():
         plt.savefig(viz_path + '/epoch_test_multi_accuracy.jpg')
         plt.close()
         '''
-        writer.add_scalar('Per_Epoch/train/cl_loss', epoch_train_cl_loss / num_train_samples, epoch)
-        writer.add_scalar('Per_Epoch/train/am_loss', epoch_train_am_loss / num_train_samples, epoch)
-        writer.add_scalar('Per_Epoch/train/total_loss', epoch_train_total_loss / num_train_samples, epoch)
-        writer.add_scalar('Per_Epoch/train/cl_accuracy', total_train_single_accuracy / num_train_samples, epoch)
+        if epoch > 0:
+            writer.add_scalar('Per_Epoch/train/cl_loss', epoch_train_cl_loss / num_train_samples, epoch)
+            writer.add_scalar('Per_Epoch/train/am_loss', epoch_train_am_loss / num_train_samples, epoch)
+            writer.add_scalar('Per_Epoch/train/total_loss', epoch_train_total_loss / num_train_samples, epoch)
+            writer.add_scalar('Per_Epoch/train/cl_accuracy', total_train_single_accuracy / num_train_samples, epoch)
         writer.add_scalar('Per_Epoch/test/cl_accuracy', total_test_single_accuracy / num_test_samples, epoch)
 
 

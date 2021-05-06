@@ -6,6 +6,7 @@ import os
 import numpy as np
 from torch.utils import data
 from torch.utils.data import SequentialSampler, RandomSampler
+from sys import maxsize as maxint
 
 
 def load_func(path, file, all_files, could_be_mask):
@@ -69,7 +70,7 @@ class MedT_Loader():
         self.train_dataset = MedT_Train_Data(root_dir+'training/')
         self.test_dataset = MedT_Test_Data(root_dir + 'validation/')
 
-        train_sampler = RandomSampler(self.train_dataset, replacement=True)
+        train_sampler = RandomSampler(self.train_dataset, num_samples=maxint, replacement=True)
         test_sampler = SequentialSampler(self.test_dataset)
 
         train_loader = torch.utils.data.DataLoader(

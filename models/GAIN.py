@@ -111,17 +111,19 @@ class GAIN(nn.Module):
 
         Ac_min = Ac.min()
         Ac_max = Ac.max()
-        scaled_ac = (Ac - Ac_min) / (Ac_max - Ac_min)
+        import sys
+        eps = sys.float_info.epsilon
+        scaled_ac = (Ac - Ac_min) / (Ac_max - Ac_min + eps)
         mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
         masked_image = images - images * mask
 
-        for param in self.model.parameters():
-            param.requires_grad = False
+       # for param in self.model.parameters():
+            #param.requires_grad = False
 
         logits_am = self.model(masked_image)
 
-        for param in self.model.parameters():
-            param.requires_grad = True
+        #for param in self.model.parameters():
+            #param.requires_grad = True
 
         return logits_cl, logits_am, heatmap, masked_image, mask
 

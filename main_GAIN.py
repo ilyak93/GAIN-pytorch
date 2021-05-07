@@ -69,7 +69,7 @@ def main():
 
     test_first_before_train = True
 
-    epochs = 30
+    epochs = 100
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
     gain = GAIN(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5,
@@ -98,8 +98,8 @@ def main():
     # chkpnt_epoch = checkpoint['epoch']+1
 
     writer = SummaryWriter(
-        "C:/Users/Student1/PycharmProjects/GCAM" + "/pretraining_5_" + datetime.datetime.now().strftime(
-            '%Y-%m-%d_%H-%M-%S'))
+        "C:/Users/Student1/PycharmProjects/GCAM" + "/pretraining_5_with_grad_" + datetime.datetime.now().strftime(
+            '%Y-%m-%d_%H-%M-%S'),  max_queue=200)
     i=0
     num_train_samples = 0
     for epoch in range(chkpnt_epoch, epochs):
@@ -139,7 +139,7 @@ def main():
         train_viz = 0
         for sample in rds.datasets['rnd_train']:
 
-            if i == 0:
+            if test_first_before_train and i == 0:
                 i += 1
                 break
 
@@ -342,10 +342,7 @@ def main():
 
         model.train(False)
         j = 0
-        test = False
-        test_global_step = False
         for sample in rds.datasets['seq_test']:
-            test = True
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
             if num_of_labels > 1:
@@ -456,7 +453,8 @@ def main():
                     writer.add_image(tag='Test_Heatmaps/image_' + str(j) + '_' + '_'.join(gt),
                                      img_tensor=grid, global_step=epoch,
                                      dataformats='CHW')
-                    test_global_step = True
+
+
                 '''
                 masked_image = denorm(masked_image.detach().squeeze(), mean, std)
                 masked_image = (masked_image.squeeze().permute([1, 2, 0]).cpu().detach().numpy() * 255).round().astype(
@@ -515,8 +513,6 @@ def main():
         num_test_samples = j
         print("finished epoch number:")
         print(epoch)
-        print(test)
-        print(test_global_step)
 
         gain.increase_epoch_count()
 
@@ -529,8 +525,9 @@ def main():
         #    'optimizer_state_dict': optimizer.state_dict(),
         # }, chkpt_path + str(epoch))
 
+
         #epoch_train_am_ls.append(epoch_train_am_loss / num_train_samples)
-        if epoch > 0:
+        if (test_first_before_train and epoch > 0) or test_first_before_train == False:
             print('Average epoch train am loss: {:.3f}'.format(epoch_train_am_loss / num_train_samples))
             #epoch_train_cl_ls.append(epoch_train_cl_loss / num_train_samples)
             print('Average epoch train cl loss: {:.3f}'.format(epoch_train_cl_loss / num_train_samples))
@@ -573,7 +570,7 @@ def main():
         plt.savefig(viz_path + '/epoch_test_multi_accuracy.jpg')
         plt.close()
         '''
-        if epoch > 0:
+        if (test_first_before_train and epoch > 0) or test_first_before_train == False:
             writer.add_scalar('Per_Epoch/train/cl_loss', epoch_train_cl_loss / num_train_samples, epoch)
             writer.add_scalar('Per_Epoch/train/am_loss', epoch_train_am_loss / num_train_samples, epoch)
             writer.add_scalar('Per_Epoch/train/total_loss', epoch_train_total_loss / num_train_samples, epoch)

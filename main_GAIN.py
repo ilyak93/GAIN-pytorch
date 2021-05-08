@@ -8,6 +8,7 @@ from torchvision.models import vgg19, wide_resnet101_2, mobilenet_v2
 import numpy as np
 import matplotlib.pyplot as plt
 # from torchviz import make_dot
+from sys import maxsize as maxint
 
 from dataloaders import data
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm
@@ -98,8 +99,8 @@ def main():
     # chkpnt_epoch = checkpoint['epoch']+1
 
     writer = SummaryWriter(
-        "C:/Users/Student1/PycharmProjects/GCAM" + "/pretraining_5_with_grad_" + datetime.datetime.now().strftime(
-            '%Y-%m-%d_%H-%M-%S'),  max_queue=200)
+        "C:/Users/Student1/PycharmProjects/GCAM" + "/pretraining_5_omega_0.5_" + datetime.datetime.now().strftime(
+            '%Y-%m-%d_%H-%M-%S'),  max_queue=maxint)
     i=0
     num_train_samples = 0
     for epoch in range(chkpnt_epoch, epochs):
@@ -162,7 +163,7 @@ def main():
             cl_loss = loss_fn(logits_cl, class_onehot)
 
             am_scores = nn.Softmax(dim=1)(logits_am)
-            # am_top_scores, am_labels = am_scores.topk(num_of_labels)
+            _, am_labels = am_scores.topk(num_of_labels)
             am_labels_scores = am_scores.view(-1)[labels]
             am_loss = am_labels_scores.sum() / am_labels_scores.size(0)
 
@@ -213,12 +214,34 @@ def main():
                 viz = torch.from_numpy(visualization).unsqueeze(0)
                 augmented = torch.tensor(np.asarray(input_image)).unsqueeze(0)
                 orig = sample['image']
-                orig_viz = torch.cat((orig, augmented, viz), 0)
+                masked_image = denorm(masked_image.detach().squeeze(), mean, std)
+                masked_image = (masked_image.squeeze().permute([1, 2, 0]).cpu().detach().numpy() * 255).round().astype(
+                    np.uint8)
+                masked_image = torch.from_numpy(masked_image).unsqueeze(0)
+                orig_viz = torch.cat((orig, augmented, viz, masked_image), 0)
                 grid = torchvision.utils.make_grid(orig_viz.permute([0, 3, 1, 2]))
                 gt = [categories[x] for x in label_idx_list]
                 writer.add_image(tag='Train_Heatmaps/image_' + str(i) + '_' + '_'.join(gt),
                                  img_tensor=grid, global_step=epoch,
                                  dataformats='CHW')
+                y_scores = nn.Softmax(dim=1)(logits_cl.detach())
+                _, predicted_categories = y_scores.topk(num_of_labels)
+                predicted_cl = [(categories[x], format(y_scores.view(-1)[x], '.4f')) for x in
+                                predicted_categories.view(-1)]
+                labels_cl = [(categories[x], format(y_scores.view(-1)[x[0]], '.4f')) for x in label_idx_list]
+                import itertools
+                predicted_cl = list(itertools.chain(*predicted_cl))
+                labels_cl = list(itertools.chain(*labels_cl))
+                cl_text = 'cl_gt_'+'_'.join(labels_cl)+'_pred_'+'_'.join(predicted_cl)
+
+                predicted_am = [(categories[x], format(am_scores.view(-1)[x], '.4f')) for x in am_labels.view(-1)]
+                labels_am = [(categories[x], format(am_scores.view(-1)[x[0]], '.4f')) for x in label_idx_list]
+                import itertools
+                predicted_am = list(itertools.chain(*predicted_am))
+                labels_am = list(itertools.chain(*labels_am))
+                am_text = '_am_gt_' + '_'.join(labels_am) + '_pred_' + '_'.join(predicted_am)
+
+                writer.add_text('Train_Heatmaps_Description/image_'+str(i) + '_' + '_'.join(gt), cl_text+am_text, global_step=epoch)
                 train_viz += 1
 
             '''
@@ -353,7 +376,7 @@ def main():
 
             # logits = model(input_tensor)
             # logits_cl, logits_am, heatmap, masked_image, mask = gain(input_tensor, labels)
-            logits_cl, _, heatmap, _, _ = gain(input_tensor, labels)
+            logits_cl, logits_am, heatmap, masked_image, mask = gain(input_tensor, labels)
 
             # indices = torch.Tensor(label_idx_list).long().to(device)
             # class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
@@ -382,6 +405,10 @@ def main():
             acc = (y_pred == gt).sum()
             total_test_single_accuracy += acc.detach().cpu()
 
+            am_scores = nn.Softmax(dim=1)(logits_am)
+            _, am_labels = am_scores.topk(num_of_labels)
+
+
             # Multi label evaluation
             # _, y_pred_multi = logits_cl.detach().topk(num_of_labels)
             # y_pred_multi = y_pred_multi.view(-1)
@@ -397,7 +424,7 @@ def main():
                 test_accuracy.append(acc.detach().cpu())
                 #test_multi_accuracy.append(acc_multi.detach().cpu())
             '''
-            if j % 50 == 0:
+            if j % 25 == 0:
                 '''
                 test_epoch_cl_loss.append(cl_loss.detach().item())
                 test_epoch_am_loss.append(am_loss.detach().item())
@@ -444,15 +471,40 @@ def main():
                 # visualization_m = Image.fromarray(visualization)
                 # visualization_m.save(dir_path + '/' + 'vis.jpg')
 
-                if j % 50 == 0:
+                if j % 25 == 0:
                     viz = torch.from_numpy(visualization).unsqueeze(0)
                     orig = sample['image']
-                    orig_viz = torch.cat((orig, viz), 0)
+                    masked_image = denorm(masked_image.detach().squeeze(), mean, std)
+                    masked_image = (masked_image.squeeze().permute([1, 2, 0]).cpu().detach().numpy() * 255).round().astype(np.uint8)
+                    masked_image = torch.from_numpy(masked_image).unsqueeze(0)
+                    #mask = (mask.squeeze().detach().cpu().numpy() * 255).astype(np.uint8)
+                    #mask = torch.from_numpy(mask).view(1, mask.shape[0], mask.shape[1], 1)
+                    orig_viz = torch.cat((orig, viz, masked_image), 0)
+
                     grid = torchvision.utils.make_grid(orig_viz.permute([0, 3, 1, 2]))
                     gt = [categories[x] for x in label_idx_list]
                     writer.add_image(tag='Test_Heatmaps/image_' + str(j) + '_' + '_'.join(gt),
                                      img_tensor=grid, global_step=epoch,
                                      dataformats='CHW')
+                    y_scores = nn.Softmax(dim=1)(logits_cl.detach())
+                    _, predicted_categories = y_scores.topk(num_of_labels)
+                    predicted_cl = [(categories[x], format(y_scores.view(-1)[x], '.4f')) for x in
+                                    predicted_categories.view(-1)]
+                    labels_cl = [(categories[x], format(y_scores.view(-1)[x[0]], '.4f')) for x in label_idx_list]
+                    import itertools
+                    predicted_cl = list(itertools.chain(*predicted_cl))
+                    labels_cl = list(itertools.chain(*labels_cl))
+                    cl_text = 'cl_gt_' + '_'.join(labels_cl) + '_pred_' + '_'.join(predicted_cl)
+
+                    predicted_am = [(categories[x], format(am_scores.view(-1)[x], '.4f')) for x in am_labels.view(-1)]
+                    labels_am = [(categories[x], format(am_scores.view(-1)[x[0]], '.4f')) for x in label_idx_list]
+                    import itertools
+                    predicted_am = list(itertools.chain(*predicted_am))
+                    labels_am = list(itertools.chain(*labels_am))
+                    am_text = '_am_gt_' + '_'.join(labels_am) + '_pred_' + '_'.join(predicted_am)
+
+                    writer.add_text('Test_Heatmaps_Description/image_' + str(i) + '_' + '_'.join(gt),
+                                    cl_text + am_text, global_step=epoch)
 
 
                 '''

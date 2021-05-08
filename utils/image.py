@@ -14,24 +14,23 @@ def preprocess_image(img , train , mean=None, std=None) -> torch.Tensor:
     if mean is None:
         mean = [0.5, 0.5, 0.5]
 
-    ds_pls = [AutoAugmentPolicy.IMAGENET, AutoAugmentPolicy.CIFAR10, AutoAugmentPolicy.SVHN]
-    random_policy = choice(ds_pls)
+    #ds_pls = [AutoAugmentPolicy.IMAGENET, AutoAugmentPolicy.CIFAR10, AutoAugmentPolicy.SVHN]
+    #random_policy = choice(ds_pls)
 
     if train == True:
-        preprocessing = Compose([
+        augment = Compose([
             Image.fromarray,
-            torchvision.transforms.AutoAugment(random_policy),
+            torchvision.transforms.AutoAugment(AutoAugmentPolicy.CIFAR10),
             RandomHorizontalFlip(),
+        ])
+        normilize = Compose([
             ToTensor(),
             Normalize(mean=mean, std=std)
         ])
-        preprocessing_ret_augmented = Compose([
-            Image.fromarray,
-            torchvision.transforms.AutoAugment(random_policy),
-            RandomHorizontalFlip(),
-        ])
+        augmented = augment(img)
+        preprocced = normilize(augmented).unsqueeze(0)
 
-        return preprocessing(img).unsqueeze(0), preprocessing_ret_augmented(img)
+        return preprocced, augmented
 
     preprocessing = Compose([
         ToTensor(),

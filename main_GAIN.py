@@ -503,7 +503,7 @@ def main():
                     labels_am = list(itertools.chain(*labels_am))
                     am_text = '_am_gt_' + '_'.join(labels_am) + '_pred_' + '_'.join(predicted_am)
 
-                    writer.add_text('Test_Heatmaps_Description/image_' + str(i) + '_' + '_'.join(gt),
+                    writer.add_text('Test_Heatmaps_Description/image_' + str(j) + '_' + '_'.join(gt),
                                     cl_text + am_text, global_step=epoch)
 
 

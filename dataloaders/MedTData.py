@@ -89,17 +89,20 @@ class MedT_Test_Data(data.Dataset):
             return self.loader(self.pos_root_dir, self.all_files[index], None)
         return self.loader(self.neg_root_dir, self.all_files[index], None)
 
+    def positive_len(self):
+        return self.pos_num_of_samples
+
 
 class MedT_Loader():
-    def __init__(self, root_dir):
+    def __init__(self, root_dir, target_weight):
         self.train_dataset = MedT_Train_Data(root_dir+'training/')
         self.test_dataset = MedT_Test_Data(root_dir + 'validation/')
 
-        train_sampler = RandomSampler(self.train_dataset, num_samples=maxint,
-                                      replacement=True)
+        #train_sampler = RandomSampler(self.train_dataset, num_samples=maxint,
+        #                              replacement=True)
         test_sampler = SequentialSampler(self.test_dataset)
 
-
+        '''
         train_loader = torch.utils.data.DataLoader(
             self.train_dataset,
             batch_size=1,
@@ -109,8 +112,8 @@ class MedT_Loader():
         ones = torch.ones(self.train_dataset.positive_len())
         labels = torch.zeros(len(self.train_dataset))
         labels[0:len(ones)] = ones
-        train_loader = build_balanced_dataloader(self.train_dataset, labels.int())
-        '''
+        train_loader = build_balanced_dataloader(self.train_dataset, labels.int(), target_weight)
+
         test_loader = torch.utils.data.DataLoader(
             self.test_dataset,
             num_workers=0,
@@ -118,3 +121,6 @@ class MedT_Loader():
             sampler=test_sampler)
 
         self.datasets = {'train': train_loader, 'test': test_loader }
+
+    def get_test_pos_count(self):
+        return self.test_dataset.pos_num_of_samples

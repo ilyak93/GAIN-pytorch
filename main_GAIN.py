@@ -75,8 +75,8 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
     gain = GAIN(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5,
                 test_first_before_train=test_first_before_train)
-    cl_factor = 0.5
-    am_factor = 0.5
+    cl_factor = 1
+    am_factor = 1
 
     #epoch_train_single_accuracy = []
     # epoch_train_multi_accuracy = []
@@ -99,16 +99,16 @@ def main():
     # chkpnt_epoch = checkpoint['epoch']+1
 
     writer = SummaryWriter(
-        "C:/Users/Student1/PycharmProjects/GCAM" + "/pretraining_5_omega_0.5_" + datetime.datetime.now().strftime(
+        "C:/Users/Student1/PycharmProjects/GCAM" + "/pretraining_5_sigma_0.3_omega_10_with_grad2_multi" + datetime.datetime.now().strftime(
             '%Y-%m-%d_%H-%M-%S'),  max_queue=maxint)
     i=0
     num_train_samples = 0
     for epoch in range(chkpnt_epoch, epochs):
 
         total_train_single_accuracy = 0
-        # total_train_multi_accuracy = 0
+        total_train_multi_accuracy = 0
         total_test_single_accuracy = 0
-        # total_test_multi_accuracy = 0
+        total_test_multi_accuracy = 0
 
         epoch_train_am_loss = 0
         epoch_train_cl_loss = 0
@@ -146,8 +146,8 @@ def main():
 
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
-            if num_of_labels > 1:
-                continue
+            #if num_of_labels > 1:
+            #    continue
 
             input_tensor, input_image = preprocess_image(sample['image'].squeeze().numpy(), train=True, mean=mean, std=std)
             input_tensor = input_tensor.to(device)
@@ -202,10 +202,10 @@ def main():
                 num_train_samples += 1
 
             # Multi label evaluation
-            # _, y_pred_multi = logits_cl.detach().topk(num_of_labels)
-            # y_pred_multi = y_pred_multi.view(-1)
-            # acc_multi = (y_pred_multi == gt).sum() / num_of_labels
-            # total_train_multi_accuracy += acc_multi.detach().cpu()
+            _, y_pred_multi = logits_cl.detach().topk(num_of_labels)
+            y_pred_multi = y_pred_multi.view(-1)
+            acc_multi = (y_pred_multi == gt).sum() / num_of_labels
+            total_train_multi_accuracy += acc_multi.detach().cpu()
 
             if train_viz < 2:
                 htm = heatmap.squeeze().cpu().detach().numpy()
@@ -368,8 +368,8 @@ def main():
         for sample in rds.datasets['seq_test']:
             label_idx_list = sample['label/idx']
             num_of_labels = len(label_idx_list)
-            if num_of_labels > 1:
-                continue
+            #if num_of_labels > 1:
+            #    continue
             input_tensor, _ = preprocess_image(sample['image'].squeeze().numpy(), train=False, mean=mean, std=std)
             input_tensor = input_tensor.to(device)
             labels = torch.Tensor(label_idx_list).to(device).long()
@@ -410,10 +410,10 @@ def main():
 
 
             # Multi label evaluation
-            # _, y_pred_multi = logits_cl.detach().topk(num_of_labels)
-            # y_pred_multi = y_pred_multi.view(-1)
-            # acc_multi = (y_pred_multi == gt).sum() / num_of_labels
-            # total_test_multi_accuracy += acc_multi.detach().cpu()
+            _, y_pred_multi = logits_cl.detach().topk(num_of_labels)
+            y_pred_multi = y_pred_multi.view(-1)
+            acc_multi = (y_pred_multi == gt).sum() / num_of_labels
+            total_test_multi_accuracy += acc_multi.detach().cpu()
 
             '''
             if i % 25 == 0:
@@ -627,7 +627,9 @@ def main():
             writer.add_scalar('Per_Epoch/train/am_loss', epoch_train_am_loss / num_train_samples, epoch)
             writer.add_scalar('Per_Epoch/train/total_loss', epoch_train_total_loss / num_train_samples, epoch)
             writer.add_scalar('Per_Epoch/train/cl_accuracy', total_train_single_accuracy / num_train_samples, epoch)
+            writer.add_scalar('Per_Epoch/train/multi_cl_accuracy', total_train_multi_accuracy / num_train_samples, epoch)
         writer.add_scalar('Per_Epoch/test/cl_accuracy', total_test_single_accuracy / num_test_samples, epoch)
+        writer.add_scalar('Per_Epoch/test/multi_cl_accuracy', total_test_multi_accuracy / num_test_samples, epoch)
 
 
 if __name__ == '__main__':

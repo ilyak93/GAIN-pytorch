@@ -9,7 +9,7 @@ from torch.utils.data import SequentialSampler, RandomSampler
 from sys import maxsize as maxint
 
 
-def build_balanced_dataloader(dataset, labels, target_weight=None, num_workers=0, batch_size=1):
+def build_balanced_dataloader(dataset, labels, target_weight=None, batch_size=1, num_workers=0, steps_per_epoch=500):
     assert len(dataset) == len(labels)
     labels = np.asarray(labels)
     ulabels, label_count = np.unique(labels, return_counts=True)
@@ -19,6 +19,7 @@ def build_balanced_dataloader(dataset, labels, target_weight=None, num_workers=0
     assert len(target_weight) == len(ulabels)
 
     from torch.utils.data import WeightedRandomSampler
+    #num_samples = steps_per_epoch * batch_size
     weighted_sampler = WeightedRandomSampler(
         weights=(target_weight * balancing_weight)[labels],
         num_samples=len(labels),
@@ -28,7 +29,8 @@ def build_balanced_dataloader(dataset, labels, target_weight=None, num_workers=0
                         batch_size=batch_size,
                         shuffle=False,
                         num_workers=num_workers,
-                        sampler=weighted_sampler)
+                        sampler=weighted_sampler,
+                        collate_fn=my_collate)
     return loader
 
 
@@ -45,8 +47,8 @@ def load_func(path, file, all_files):
         p_mask = PIL.Image.open(path_to_mask)
         np_mask = np.asarray(p_mask)
         tensor_mask = torch.tensor(np_mask)
-        return (tensor_image, tensor_mask, label)
-    return (tensor_image, -1, label)
+        return tensor_image, tensor_mask, label
+    return tensor_image, -1, label
 
 
 class MedT_Train_Data(data.Dataset):
@@ -93,8 +95,12 @@ class MedT_Test_Data(data.Dataset):
         return self.pos_num_of_samples
 
 
+def my_collate(batch):
+    imgs, masks, labels = zip(*batch)
+    return imgs, masks, labels
+
 class MedT_Loader():
-    def __init__(self, root_dir, target_weight):
+    def __init__(self, root_dir, target_weight, batch_size=1):
         self.train_dataset = MedT_Train_Data(root_dir+'training/')
         self.test_dataset = MedT_Test_Data(root_dir + 'validation/')
 
@@ -112,12 +118,12 @@ class MedT_Loader():
         ones = torch.ones(self.train_dataset.positive_len())
         labels = torch.zeros(len(self.train_dataset))
         labels[0:len(ones)] = ones
-        train_loader = build_balanced_dataloader(self.train_dataset, labels.int(), target_weight)
+        train_loader = build_balanced_dataloader(self.train_dataset, labels.int(), target_weight, batch_size)
 
         test_loader = torch.utils.data.DataLoader(
             self.test_dataset,
             num_workers=0,
-            batch_size=1,
+            batch_size=batch_size,
             sampler=test_sampler)
 
         self.datasets = {'train': train_loader, 'test': test_loader }

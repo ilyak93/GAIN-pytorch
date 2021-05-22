@@ -9,7 +9,7 @@ from torch.utils.data import SequentialSampler, RandomSampler
 from sys import maxsize as maxint
 
 
-def build_balanced_dataloader(dataset, labels, target_weight=None, batch_size=1, num_workers=0, steps_per_epoch=500):
+def build_balanced_dataloader(dataset, labels, target_weight=None, batch_size=1, steps_per_epoch=500, num_workers=0):
     assert len(dataset) == len(labels)
     labels = np.asarray(labels)
     ulabels, label_count = np.unique(labels, return_counts=True)
@@ -19,10 +19,10 @@ def build_balanced_dataloader(dataset, labels, target_weight=None, batch_size=1,
     assert len(target_weight) == len(ulabels)
 
     from torch.utils.data import WeightedRandomSampler
-    #num_samples = steps_per_epoch * batch_size
+    num_samples = steps_per_epoch * batch_size
     weighted_sampler = WeightedRandomSampler(
         weights=(target_weight * balancing_weight)[labels],
-        num_samples=len(labels),
+        num_samples=num_samples,
         replacement=True
     )
     loader = torch.utils.data.DataLoader(dataset=dataset,
@@ -100,7 +100,7 @@ def my_collate(batch):
     return imgs, masks, labels
 
 class MedT_Loader():
-    def __init__(self, root_dir, target_weight, batch_size=1):
+    def __init__(self, root_dir, target_weight, batch_size=1, steps_per_epoch=6000):
         self.train_dataset = MedT_Train_Data(root_dir+'training/')
         self.test_dataset = MedT_Test_Data(root_dir + 'validation/')
 
@@ -118,7 +118,10 @@ class MedT_Loader():
         ones = torch.ones(self.train_dataset.positive_len())
         labels = torch.zeros(len(self.train_dataset))
         labels[0:len(ones)] = ones
-        train_loader = build_balanced_dataloader(self.train_dataset, labels.int(), target_weight, batch_size)
+        train_loader = build_balanced_dataloader(
+                    self.train_dataset, labels.int(),
+                    target_weight=target_weight, batch_size=batch_size,
+                    steps_per_epoch=steps_per_epoch)
 
         test_loader = torch.utils.data.DataLoader(
             self.test_dataset,

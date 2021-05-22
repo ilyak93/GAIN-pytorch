@@ -43,8 +43,11 @@ def main():
     mean = [0.485, 0.456, 0.406]
     std = [0.229, 0.224, 0.225]
 
-    batch_size = 24
-    medt_loader = MedT_Loader('C:/MDT_dataset/SB3_ulcers_mined_roi_mult/', [0.75, 0.25], batch_size=batch_size)
+    batch_size = 1
+    epoch_size = 500*24
+    medt_loader = MedT_Loader('C:/MDT_dataset/SB3_ulcers_mined_roi_mult/',
+                              target_weight=[0.75, 0.25], batch_size=batch_size,
+                              steps_per_epoch=epoch_size)
 
     test_first_before_train = True
 
@@ -61,13 +64,14 @@ def main():
     # chkpnt_epoch = checkpoint['epoch']+1
 
     writer = SummaryWriter(
-        "C:/Users/Student1/PycharmProjects/GCAM" + "/MedT_pretraining_10_sigma_0.3_omega_10_weighted_debug2" + datetime.datetime.now().strftime(
-            '%Y-%m-%d_%H-%M-%S'))
+        "C:/Users/Student1/PycharmProjects/GCAM" + "/MedT_cl_baseline_epochsize_12000_single_batch_" +
+            datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     i=0
     num_train_samples = 0
-    epoch_size = 500
+
 
     for epoch in range(chkpnt_epoch, epochs):
+        dif_i = 0
         count_pos = 0
         count_neg = 0
         train_differences = np.zeros(epoch_size*batch_size)
@@ -80,62 +84,55 @@ def main():
 
         model.train(True)
 
-        for sample in medt_loader.datasets['train']:
+        if not test_first_before_train or (test_first_before_train and epoch != 0):
+            for sample in medt_loader.datasets['train']:
 
-            if test_first_before_train and epoch == 0:
+                label_idx_list = [sample[2]]
+
+                batch, _ = MedT_preprocess_image(sample[0][0].squeeze().numpy(), train=True, mean=mean, std=std)
+                for img in sample[0][1:]:
+                    input_tensor, input_image = MedT_preprocess_image(img.squeeze().numpy(), train=True, mean=mean, std=std)
+                    batch = torch.cat((batch,input_tensor), dim=0)
+                batch = batch.to(device)
+                #input_tensor = input_tensor.to(device)
+                optimizer.zero_grad()
+                labels = torch.Tensor(label_idx_list).to(device).long()
+
+                count_pos += (labels==1).int().sum()
+                count_neg += (labels==0).int().sum()
+
+                logits_cl = model(batch)
+
+                lb1 = labels
+                lb2 = 1-lb1
+                lbs = torch.cat((lb2, lb1), dim=0).transpose(0,1).float()
+
+                cl_loss = loss_fn(logits_cl, lbs)
+
+                epoch_train_cl_loss += cl_loss.detach().cpu().item()
+
+
+                difference = (logits_cl[:,1] - logits_cl[:,0]).cpu().detach().numpy()
+                train_differences[dif_i : dif_i + len(difference)] = difference
+                train_labels[dif_i : dif_i + len(difference)] = labels.squeeze().cpu().detach().numpy()
+                dif_i += len(difference)
+                writer.add_scalar('Loss/train/cl_loss', cl_loss.detach().cpu().item(), i)
+
+                loss = cl_loss
+                loss.backward()
+                optimizer.step()
+
+                # Single label evaluation
+                y_pred = logits_cl.detach().argmax(dim=1)
+                y_pred = y_pred.view(-1)
+                gt = labels.view(-1)
+                acc = (y_pred == gt).sum()
+                total_train_single_accuracy += acc.detach().cpu()
                 i += 1
-                break
-            elif i != 0 and i % epoch_size == 0:
-                i += 1
-                break
-
-
-            label_idx_list = [sample[2]]
-
-            batch, _ = MedT_preprocess_image(sample[0][0].squeeze().numpy(), train=True, mean=mean, std=std)
-            for img in sample[0][1:]:
-                input_tensor, input_image = MedT_preprocess_image(img.squeeze().numpy(), train=True, mean=mean, std=std)
-                batch = torch.cat((batch,input_tensor), dim=0)
-            batch = batch.to(device)
-            input_tensor = input_tensor.to(device)
-            optimizer.zero_grad()
-            labels = torch.Tensor(label_idx_list).to(device).long()
-
-            count_pos += (labels==1).int().sum()
-            count_neg += (labels==0).int().sum()
-
-            logits_cl = model(batch)
-
-            lb1 = labels
-            lb2 = 1-lb1
-            lbs = torch.cat((lb2, lb1), dim=0).transpose(0,1).float()
-
-            cl_loss = loss_fn(logits_cl, lbs)
-
-            epoch_train_cl_loss += cl_loss.detach().cpu().item()
-
-
-            difference = (logits_cl[:,1] - logits_cl[:,0]).cpu().detach().numpy()
-            train_differences[(i % epoch_size) * batch_size : ((i % epoch_size) + 1) * batch_size] = difference
-            train_labels[(i % epoch_size) * batch_size : ((i % epoch_size) + 1) * batch_size] = labels.squeeze().cpu().detach().numpy()
-
-            writer.add_scalar('Loss/train/cl_loss', cl_loss.detach().cpu().item(), i)
-
-            loss = cl_loss
-            loss.backward()
-            optimizer.step()
-
-            # Single label evaluation
-            y_pred = logits_cl.detach().argmax(dim=1)
-            y_pred = y_pred.view(-1)
-            gt = labels.view(-1)
-            acc = (y_pred == gt).sum()
-            total_train_single_accuracy += acc.detach().cpu()
-            i += 1
-            if epoch == 0 and test_first_before_train == False:
-                num_train_samples += 1
-            if epoch == 1 and test_first_before_train == True:
-                num_train_samples += 1
+                if epoch == 0 and test_first_before_train == False:
+                    num_train_samples += 1
+                if epoch == 1 and test_first_before_train == True:
+                    num_train_samples += 1
 
         print("pos = {} neg = {}".format(count_pos, count_neg))
         model.train(False)

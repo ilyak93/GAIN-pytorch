@@ -5,6 +5,25 @@ from torch.utils.data import Dataset, Subset
 from dataloaders.pascal_voc_loader import PascalVOCLoader
 from torch.utils.data.sampler import SubsetRandomSampler, SequentialSampler
 
+device = torch.device('cuda:0')
+
+def my_collate(batch):
+    images = [torch.tensor(sample['image']) for sample in batch]
+    max_len = max(batch, key=lambda p: p['image'].shape[0])['image'].shape[0]
+    max_width = max(batch, key=lambda p: p['image'].shape[1])['image'].shape[1]
+    labels = [sample['label/idx'] for sample in batch]
+    padded = []
+    for img in images:
+        base = torch.zeros((max_len, max_width)).unsqueeze(2).repeat([1,1,3])
+        base[0:img.size()[0], 0:img.size()[1]] = img
+        base = base.type(torch.ByteTensor)
+        padded.append(base)
+    padded_images = torch.stack(padded, dim=0).to(device)
+
+
+    labels_ohe = [sum(sample['label/onehot']).to(device) for sample in batch]
+    return padded_images, labels_ohe, labels
+
 
 class RawDataset:
     def __init__(self,
@@ -44,7 +63,6 @@ class RawDataset:
         train_indices, val_indices = indices[split:], indices[:split]
 
         self.seq_train_subset = Subset(self.dataset, train_indices)
-
         self.seq_test_subset = Subset(self.dataset, val_indices)
 
         random_train_sampler = SubsetRandomSampler(train_indices)
@@ -54,7 +72,8 @@ class RawDataset:
             self.dataset,
             batch_size=self.batch_size['train'],
             num_workers=0,
-            sampler=random_train_sampler)
+            sampler=random_train_sampler,
+            collate_fn=my_collate)
         random_validation_loader = torch.utils.data.DataLoader(
             self.dataset,
             num_workers=0,
@@ -73,7 +92,8 @@ class RawDataset:
             self.seq_test_subset,
             num_workers=0,
             batch_size=self.batch_size['test'],
-            sampler=sequential_valid_sampler)
+            sampler=sequential_valid_sampler,
+            collate_fn=my_collate)
 
         self.datasets = {'rnd_train': random_train_loader, 'rnd_test': random_validation_loader,
                          'seq_train': sequetial_train_loader, 'seq_test': sequetial_validation_loader}

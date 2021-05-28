@@ -19,6 +19,8 @@ from skimage import draw, io
 import scipy
 import warnings
 
+from torchvision.transforms import Resize
+
 
 class PascalVOCLoader(data.Dataset):
     """Data loader for the Pascal VOC semantic segmentation dataset.
@@ -72,8 +74,8 @@ class PascalVOCLoader(data.Dataset):
         ]
 
         self.transf_shape = {
-            'image': [output_dim] * 2,
-            'truth': [output_dim] * 2
+            'image': [output_dim],
+            'truth': [output_dim]
         }
         self.transf_normalize = {
             'mean': [0.485, 0.456, 0.406],
@@ -174,20 +176,20 @@ class PascalVOCLoader(data.Dataset):
             'label/idx': class_idx,
             'label/onehot': class_onehot
         }
+
+
         '''
         # apply augmentations
         if (self.augmentations is not None):
             out = self.augmentations(out)
-
+        '''
         # normalize and resize
-        image = transform.resize(
-            out['image'],
-            self.transf_shape['image'],
-            anti_aliasing=True,
-            mode='reflect')
+        rsz = Resize(self.transf_shape['image'])
+        image = rsz(Image.fromarray(out['image']))
 
+        '''
         truths = [
-            transform.resize(
+            transform.Resize(
                 t,
                 self.transf_shape['truth'],
                 anti_aliasing=True,
@@ -201,20 +203,26 @@ class PascalVOCLoader(data.Dataset):
                 anti_aliasing=True,
                 mode='reflect')[np.newaxis, ...] for t in out['label/masks']
         ]
-
+        '''
+        '''
         image = np.array([
             image[..., c] - self.transf_normalize['mean'][c] for c in range(3)
         ])
         image = [
             image[c, ...] / self.transf_normalize['std'][c] for c in range(3)
         ]
+        '''
+
+
 
         # image = image.transpose((2, 0, 1))
         image = np.array(image)
         out['image'] = torch.from_numpy(np.array(image)).type(torch.float)
         out['label/truths'] = [torch.from_numpy(t).type(torch.float) for t in truths]
         out['label/masks'] = [torch.from_numpy(t).type(torch.float) for t in masks]
-        '''
+
+
+
 
         return out
 

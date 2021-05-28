@@ -28,7 +28,7 @@ class GAIN(nn.Module):
         self._register_hooks(grad_layer)
 
         # sigma, omega for making the soft-mask
-        self.sigma = 0.3
+        self.sigma = 0.25
         self.omega = 10
 
         self.pretraining_epochs = pretraining_epochs
@@ -67,6 +67,13 @@ class GAIN(nn.Module):
 
         return ohe
 
+    def _to_ohe_multibatch(self, labels):
+
+        ohe = torch.nn.functional.one_hot(labels, self.num_classes).float()
+        ohe = torch.autograd.Variable(ohe)
+
+        return ohe
+
     def forward(self, images, labels): #TODO: no need for saving the hook results ; Put Nan
 
         # Remember, only do back-probagation during the training. During the validation, it will be affected by bachnorm
@@ -80,27 +87,20 @@ class GAIN(nn.Module):
 
             _, _, img_h, img_w = images.size()
 
-            self.model.train(True)  # TODO: use is_train
+            self.model.train(is_train)  # TODO: use is_train
             logits_cl = self.model(images)  # BS x num_classes
             self.model.zero_grad()
 
             if not is_train:
                 pred = F.softmax(logits_cl).argmax(dim=1)
-                labels_ohe = self._to_ohe(pred).cuda()
+                labels_ohe = self._to_ohe_multibatch(pred).cuda()
             else:
-                labels_ohe = self._to_ohe(labels).cuda()
+                labels_ohe = torch.stack(labels)
 
             # gradient = logits * labels_ohe
-            grad_logits = (logits_cl * labels_ohe).sum()  # BS x num_classes
-            grad_logits.backward(retain_graph=True)
+            grad_logits = (logits_cl * labels_ohe).sum(dim=1)  # BS x num_classes
+            grad_logits.backward(retain_graph=True, gradient=torch.ones_like(grad_logits))
             self.model.zero_grad()
-
-        if is_train:  # TODO: check this
-            self.model.train(True)
-        else:
-            self.model.train(False)
-            self.model.eval()
-            logits_cl = self.model(images)
 
         backward_features = self.backward_features  # BS x C x H x W
         fl = self.feed_forward_features  # BS x C x H x W
@@ -117,7 +117,7 @@ class GAIN(nn.Module):
         eps = sys.float_info.epsilon
         scaled_ac = (Ac - Ac_min) / (Ac_max - Ac_min + eps)
         mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
-        masked_image = images - images * mask # + mask *
+        masked_image = images - images * mask
 
         # for param in self.model.parameters():
         # param.requires_grad = False

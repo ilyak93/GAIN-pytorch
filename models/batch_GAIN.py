@@ -8,9 +8,9 @@ import torch.nn.functional as F
 from utils.image import denorm
 
 
-class GAIN(nn.Module):
+class batch_GAIN_v2(nn.Module):
     def __init__(self, model, grad_layer, num_classes, pretraining_epochs=1, test_first_before_train=False):
-        super(GAIN, self).__init__()
+        super(batch_GAIN_v2, self).__init__()
 
         self.model = model
 
@@ -95,7 +95,10 @@ class GAIN(nn.Module):
                 pred = F.softmax(logits_cl).argmax(dim=1)
                 labels_ohe = self._to_ohe_multibatch(pred).cuda()
             else:
-                labels_ohe = torch.stack(labels)
+                if type(labels) is tuple:
+                    labels_ohe = torch.stack(labels)
+                else:
+                    labels_ohe = labels
 
             # gradient = logits * labels_ohe
             grad_logits = (logits_cl * labels_ohe).sum(dim=1)  # BS x num_classes
@@ -111,11 +114,13 @@ class GAIN(nn.Module):
         Ac = F.upsample_bilinear(Ac, size=images.size()[2:])
         heatmap = Ac
 
-        Ac_min = Ac.min()
-        Ac_max = Ac.max()
+        Ac_min, _ = Ac.view(len(images), -1).min(dim=1)
+        Ac_max, _ = Ac.view(len(images), -1).max(dim=1)
         import sys
-        eps = sys.float_info.epsilon
-        scaled_ac = (Ac - Ac_min) / (Ac_max - Ac_min + eps)
+        eps = torch.tensor(sys.float_info.epsilon).cuda()
+        scaled_ac = (Ac - Ac_min.view(-1, 1, 1, 1)) / \
+                    (Ac_max.view(-1, 1, 1, 1) - Ac_min.view(-1, 1, 1, 1)
+                     + eps.view(1, 1, 1, 1))
         mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
         masked_image = images - images * mask
 

@@ -1,4 +1,5 @@
 import random
+from math import ceil, floor
 
 import PIL.Image
 import torch
@@ -48,7 +49,7 @@ def load_func(path, file, all_files):
         np_mask = np.asarray(p_mask)
         tensor_mask = torch.tensor(np_mask)
         return tensor_image, tensor_mask, label
-    return tensor_image, -1, label
+    return tensor_image, torch.tensor(-1), label
 
 
 class MedT_Train_Data(data.Dataset):
@@ -58,21 +59,32 @@ class MedT_Train_Data(data.Dataset):
         all_neg_files = os.listdir(self.neg_root_dir)
         all_pos_files = os.listdir(self.pos_root_dir)
         pos_cl_images = [file for file in all_pos_files if 'm' not in file]
+        self.masks_indices = [idx for idx,pos in enumerate(pos_cl_images) if pos.split('.')[0]+'m'+'.png' in all_pos_files]
         self.all_files = all_pos_files+all_neg_files
         self.all_cl_images = pos_cl_images+all_neg_files
         self.pos_num_of_samples = len(pos_cl_images)
         self.loader = loader
+
 
     def __len__(self):
         return len(self.all_cl_images)
 
     def __getitem__(self, index):
         if index < self.pos_num_of_samples:
-            return self.loader(self.pos_root_dir, self.all_cl_images[index], self.all_files)
-        return self.loader(self.neg_root_dir, self.all_cl_images[index], None)
+            res = list(self.loader(self.pos_root_dir, self.all_cl_images[index], self.all_files))
+        else:
+            res = list(self.loader(self.neg_root_dir, self.all_cl_images[index], None))
+        res.append(index)
+        return res
 
     def positive_len(self):
         return self.pos_num_of_samples
+
+    def get_masks_indices(self):
+        return self.masks_indices
+
+
+
 
 
 class MedT_Test_Data(data.Dataset):
@@ -88,16 +100,20 @@ class MedT_Test_Data(data.Dataset):
 
     def __getitem__(self, index):
         if index < self.pos_num_of_samples:
-            return self.loader(self.pos_root_dir, self.all_files[index], None)
-        return self.loader(self.neg_root_dir, self.all_files[index], None)
+            res = list(self.loader(self.pos_root_dir, self.all_files[index], None))
+        else:
+            res = list(self.loader(self.neg_root_dir, self.all_files[index], None))
+        res.append(index)
+        return res
 
     def positive_len(self):
         return self.pos_num_of_samples
 
 
 def my_collate(batch):
-    imgs, masks, labels = zip(*batch)
-    return imgs, masks, labels
+    imgs, masks, labels, indices = zip(*batch)
+    res_dict = {'images': imgs, 'masks': masks, 'labels': labels, 'idx': indices}
+    return res_dict
 
 class MedT_Loader():
     def __init__(self, root_dir, target_weight, batch_size=1, steps_per_epoch=6000):
@@ -107,6 +123,8 @@ class MedT_Loader():
         #train_sampler = RandomSampler(self.train_dataset, num_samples=maxint,
         #                              replacement=True)
         test_sampler = SequentialSampler(self.test_dataset)
+
+        train_as_test_sampler = SequentialSampler(self.train_dataset)
 
         '''
         train_loader = torch.utils.data.DataLoader(
@@ -127,9 +145,21 @@ class MedT_Loader():
             self.test_dataset,
             num_workers=0,
             batch_size=batch_size,
-            sampler=test_sampler)
+            sampler=test_sampler,
+            collate_fn=my_collate)
 
-        self.datasets = {'train': train_loader, 'test': test_loader }
+        train_as_test_loader = torch.utils.data.DataLoader(
+            self.train_dataset,
+            num_workers=0,
+            batch_size=batch_size,
+            sampler=train_as_test_sampler)
 
-    def get_test_pos_count(self):
+        self.datasets = {'train': train_loader, 'test': test_loader, 'train_as_test': train_as_test_loader }
+
+    def get_test_pos_count(self, train_as_test=False):
+        if train_as_test:
+            return self.train_dataset.pos_num_of_samples
         return self.test_dataset.pos_num_of_samples
+
+    def get_train_pos_count(self):
+        return self.train_dataset.pos_num_of_samples

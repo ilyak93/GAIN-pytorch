@@ -184,8 +184,8 @@ class PascalVOCLoader(data.Dataset):
             out = self.augmentations(out)
         '''
         # normalize and resize
-        rsz = Resize(self.transf_shape['image'])
-        image = rsz(Image.fromarray(out['image']))
+        #rsz = Resize(self.transf_shape['image'])
+        #image = rsz(Image.fromarray(out['image']))
 
         '''
         truths = [
@@ -216,10 +216,10 @@ class PascalVOCLoader(data.Dataset):
 
 
         # image = image.transpose((2, 0, 1))
-        image = np.array(image)
-        out['image'] = torch.from_numpy(np.array(image)).type(torch.float)
-        out['label/truths'] = [torch.from_numpy(t).type(torch.float) for t in truths]
-        out['label/masks'] = [torch.from_numpy(t).type(torch.float) for t in masks]
+        #image = np.array(image)
+        #out['image'] = torch.from_numpy(np.array(image)).type(torch.float)
+        #out['label/truths'] = [torch.from_numpy(t).type(torch.float) for t in truths]
+        #out['label/masks'] = [torch.from_numpy(t).type(torch.float) for t in masks]
 
 
 

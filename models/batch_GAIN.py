@@ -1,23 +1,54 @@
-from random import random
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils.image import denorm
+def is_bn(m):
+    return isinstance(m, nn.modules.batchnorm.BatchNorm2d) | isinstance(m, nn.modules.batchnorm.BatchNorm1d)
+
+def take_bn_layers(model):
+    for m in model.modules():
+        if is_bn(m):
+            yield m
+
+class FreezedBnModel(nn.Module):
+    def __init__(self, model, is_train=True):
+        super(FreezedBnModel, self).__init__()
+        self.model = model
+        self.bn_layers = list(take_bn_layers(self.model))
 
 
-class batch_GAIN_v2(nn.Module):
-    def __init__(self, model, grad_layer, num_classes, pretraining_epochs=1, test_first_before_train=False):
-        super(batch_GAIN_v2, self).__init__()
+    def forward(self, x):
+        is_train = self.bn_layers[0].training
+        if is_train:
+            self.set_bn_train_status(is_train=False)
+        predicted = self.model(x)
+        if is_train:
+            self.set_bn_train_status(is_train=True)
+
+        return predicted
+
+    def set_bn_train_status(self, is_train: bool):
+        for layer in self.bn_layers:
+            layer.train(mode=is_train)
+            layer.weight.requires_grad = is_train #TODO: layer.requires_grad = is_train - check is its OK
+            layer.bias.requires_grad = is_train
+
+
+class batch_GAIN_v3_ex(nn.Module):
+    def __init__(self, model, grad_layer, num_classes, fill_color, am_pretraining_epochs=1, ex_pretraining_epochs=1, test_first_before_train=False):
+        super(batch_GAIN_v3_ex, self).__init__()
 
         self.model = model
+
+        self.freezed_bn_model = FreezedBnModel(model)
 
         # print(self.model)
         self.grad_layer = grad_layer
 
         self.num_classes = num_classes
+
+        self.fill_color = fill_color
 
         # Feed-forward features
         self.feed_forward_features = None
@@ -31,13 +62,19 @@ class batch_GAIN_v2(nn.Module):
         self.sigma = 0.25
         self.omega = 10
 
-        self.pretraining_epochs = pretraining_epochs
+        self.am_pretraining_epochs = am_pretraining_epochs
+        self.ex_pretraining_epochs = ex_pretraining_epochs
         self.cur_epoch = 0
         if test_first_before_train == True:
             self.cur_epoch = -1
         self.enable_am = False
-        if self.pretraining_epochs == 0:
+        self.enable_ex = False
+        if self.am_pretraining_epochs == 0:
             self.enable_am = True
+        if self.ex_pretraining_epochs == 0:
+            self.enable_ex = True
+
+        self.use_hook = 0
 
     def _register_hooks(self, grad_layer):
         def forward_hook(module, input, output):
@@ -48,7 +85,7 @@ class batch_GAIN_v2(nn.Module):
 
         gradient_layer_found = False
         for idx, m in self.model.named_modules():
-            if idx == grad_layer:
+            if idx == self.grad_layer:
                 m.register_forward_hook(forward_hook)
                 m.register_backward_hook(backward_hook)
                 print("Register forward hook !")
@@ -59,13 +96,6 @@ class batch_GAIN_v2(nn.Module):
         # for our own sanity, confirm its existence
         if not gradient_layer_found:
             raise AttributeError('Gradient layer %s not found in the internal model' % grad_layer)
-
-    def _to_ohe(self, labels):
-
-        ohe = torch.nn.functional.one_hot(labels, self.num_classes).sum(dim=0).unsqueeze(0).float()
-        ohe = torch.autograd.Variable(ohe)
-
-        return ohe
 
     def _to_ohe_multibatch(self, labels):
 
@@ -87,7 +117,6 @@ class batch_GAIN_v2(nn.Module):
 
             _, _, img_h, img_w = images.size()
 
-            self.model.train(is_train)  # TODO: use is_train
             logits_cl = self.model(images)  # BS x num_classes
             self.model.zero_grad()
 
@@ -112,7 +141,6 @@ class batch_GAIN_v2(nn.Module):
         Ac = F.relu(Ac)
         # Ac = F.interpolate(Ac, size=images.size()[2:], mode='bilinear', align_corners=False)
         Ac = F.upsample_bilinear(Ac, size=images.size()[2:])
-        heatmap = Ac
 
         Ac_min, _ = Ac.view(len(images), -1).min(dim=1)
         Ac_max, _ = Ac.view(len(images), -1).max(dim=1)
@@ -122,22 +150,32 @@ class batch_GAIN_v2(nn.Module):
                     (Ac_max.view(-1, 1, 1, 1) - Ac_min.view(-1, 1, 1, 1)
                      + eps.view(1, 1, 1, 1))
         mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
-        masked_image = images - images * mask
 
-        # for param in self.model.parameters():
-        # param.requires_grad = False
+        masked_image = images - images * mask #+ mask * self.fill_color
 
-        logits_am = self.model(masked_image)
+        #masked_image.register_hook(lambda grad: grad * 1000) #TODO: use this to control gradient magnitude
 
-        # for param in self.model.parameters():
-        # param.requires_grad = True
+        #for param in self.model.parameters(): #TODO: use this to control set gradients on/off
+        #    param.requires_grad = False
 
-        return logits_cl, logits_am, heatmap, masked_image, mask
+        logits_am = self.freezed_bn_model(masked_image)
+
+        #for param in self.model.parameters(): #TODO: use this to control set gradients on/off
+        #    param.requires_grad = True
+
+        #logits_am.register_hook(lambda grad: grad / 1000) #TODO: use this to control gradient magnitude
+
+        return logits_cl, logits_am, scaled_ac, mask, masked_image
 
     def increase_epoch_count(self):
         self.cur_epoch += 1
-        if self.cur_epoch >= self.pretraining_epochs:
+        if self.cur_epoch >= self.am_pretraining_epochs:
             self.enable_am = True
+        if self.cur_epoch >= self.ex_pretraining_epochs:
+            self.enable_ex = True
 
     def AM_enabled(self):
         return self.enable_am
+
+    def EX_enabled(self):
+        return self.enable_ex

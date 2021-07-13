@@ -151,7 +151,7 @@ class batch_GAIN_v3_ex(nn.Module):
                      + eps.view(1, 1, 1, 1))
         mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
 
-        masked_image = images - images * mask #+ mask * self.fill_color
+        masked_image = images - images * mask + mask * self.fill_color
 
         #masked_image.register_hook(lambda grad: grad * 1000) #TODO: use this to control gradient magnitude
 

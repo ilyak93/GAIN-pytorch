@@ -16,8 +16,8 @@ from torchvision.transforms import Resize, Normalize, ToTensor
 from dataloaders import data
 from dataloaders.MedTData import MedT_Loader
 from metrics.metrics import calc_sensitivity
-from models.batch_GAIN_v3 import batch_GAIN_v3
-from models.batch_GAIN_v3_ex import batch_GAIN_v3_ex
+from models.batch_GAIN import batch_GAIN
+
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm, MedT_preprocess_image, \
     MedT_preprocess_image_v3, MedT_preprocess_image_v4
 
@@ -64,7 +64,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     norm = Normalize(mean=mean, std=std)
     fill_color = norm(torch.tensor([0.4948,0.3301,0.16]).view(1,3,1,1)).cuda()
-    gain = batch_GAIN_v3_ex(model=model, grad_layer='features', num_classes=2,
+    gain = batch_GAIN(model=model, grad_layer='features', num_classes=2,
                          am_pretraining_epochs=200, ex_pretraining_epochs=1,
                         fill_color=fill_color,
                         test_first_before_train=test_first_before_train)

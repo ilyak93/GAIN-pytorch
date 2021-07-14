@@ -32,7 +32,7 @@ All you need to do to run the algorithm is the following command
 
 ```
 $ python main_MedT.py --batchsize=24 --total_epochs=50 --nepoch=6000 --nepoch_am=100 --nepoch_ex=1 \
-				--masks_to_use=0.1 --lr=0.0001 --pos_to_write_train=50 --neg_to_write_train=20 \
+	--masks_to_use=0.1 --lr=0.0001 --pos_to_write_train=50 --neg_to_write_train=20 \
 					  --pos_to_write_test=50 --neg_to_write_test=50 --log_name=args --test_before_train=0 \
 					  --batch_pos_dist=0.25 --input_dir=C:/MDT_dataset/SB3_ulcers_mined_roi_mult/ \
 					  --output_dir=./ --checkpoint_name=args

@@ -3,14 +3,14 @@
 
 ## Introduction ##
 
-This is a Pytorch implementation of the GAIN algorithms presented in the following paper ([paper CVPR2018](https://arxiv.org/abs/1802.10171)):
+This is a Pytorch implementation of the GAIN algorithm presented in the following paper ([paper CVPR2018](https://arxiv.org/abs/1802.10171)):
 
 Kunpeng Li, Ziyan Wu, Kuan-Chuan Peng, Jan Ernst, Yun Fu.  
 Tell Me Where to Look: Guided Attention Inference Network.
 
 If you use this code in your research, please put a link to this github repository.
 ```
-@article{shah2018DCC,
+@article{
 	paper implementer    = {Ilya Kotlov},
 	title     = {Guided-Attention-Inference-Network},
 	journal   = {arXiv:1802.10171},

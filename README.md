@@ -81,15 +81,14 @@ Attention Maps visualizations:
 <a href="https://ibb.co/dmqmNWb"><img src="https://i.ibb.co/Sf8fksQ/viz1.jpg" alt="viz1" border="0"></a>
 <a href="https://ibb.co/591jKpm"><img src="https://i.ibb.co/xs2gF9W/viz2.jpg" alt="viz2" border="0"></a>
 
+Attention Maps visualizations descreptions & additional info:
+<a href="https://ibb.co/WFSZqK2"><img src="https://i.ibb.co/pZCcGXL/viz5.jpg" alt="viz5" border="0"></a>
+<a href="https://ibb.co/4gfYJCL"><img src="https://i.ibb.co/vvBQDfW/viz4.jpg" alt="viz4" border="0"></a>
 
-### Pre ###
 
-See `easle.py` for the previou
+### For more: ###
 
-
-Wipochs like:
-![shift with autoencoder](https://i.imgur.com/M1.gif)
-
+See the usecase which will be uploaded soon.
 
 ## Use case in a Project ##
 Link will be uploaded soon.

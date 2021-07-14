@@ -17,7 +17,7 @@ from dataloaders import data
 from dataloaders.MedTData import MedT_Loader
 from metrics.metrics import calc_sensitivity
 
-from models.batch_GAIN import batch_GAIN_v3_ex
+from models.batch_GAIN_MedT import batch_GAIN_MedT
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm, MedT_preprocess_image, \
     MedT_preprocess_image_v3, MedT_preprocess_image_v4
 
@@ -69,7 +69,7 @@ def main():
 
     chkpnt_epoch = 0
 
-    #checkpoint = torch.load('C:\Users\Student1\PycharmProjects\GCAM\checkpoints\batch_GAIN\with_am_no_ex_1_')
+    #checkpoint = torch.load('C:\Users\Student1\PycharmProjects\GCAM\checkpoints\batch_GAIN_MedT\with_am_no_ex_1_')
     #model.load_state_dict(checkpoint['model_state_dict'])
     #optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     #chkpnt_epoch = checkpoint['epoch']+1

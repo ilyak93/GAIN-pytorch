@@ -16,7 +16,7 @@ from torchvision.transforms import Resize, Normalize, ToTensor
 from dataloaders import data
 from dataloaders.MedTData import MedT_Loader
 from metrics.metrics import calc_sensitivity
-from models.batch_GAIN import batch_GAIN
+from models.batch_GAIN_MedT import batch_GAIN_MedT
 
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm, MedT_preprocess_image, \
      MedT_preprocess_image_v4
@@ -61,7 +61,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     norm = Normalize(mean=mean, std=std)
     fill_color = norm(torch.tensor([0.4948, 0.3301, 0.16]).view(1, 3, 1, 1)).cuda()
-    gain = batch_GAIN(model=model, grad_layer='features', num_classes=2,
+    gain = batch_GAIN_MedT(model=model, grad_layer='features', num_classes=2,
                          am_pretraining_epochs=100, ex_pretraining_epochs=1,
                          fill_color=fill_color,
                          test_first_before_train=test_first_before_train)
@@ -71,7 +71,7 @@ def main():
 
     chkpnt_epoch = 0
 
-    # checkpoint = torch.load('C:\Users\Student1\PycharmProjects\GCAM\checkpoints\batch_GAIN\with_am_no_ex_1_')
+    # checkpoint = torch.load('C:\Users\Student1\PycharmProjects\GCAM\checkpoints\batch_GAIN_MedT\with_am_no_ex_1_')
     # model.load_state_dict(checkpoint['model_state_dict'])
     # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     # chkpnt_epoch = checkpoint['epoch']+1
@@ -446,7 +446,7 @@ def main():
 
         gain.increase_epoch_count()
 
-        chkpt_path = 'C:/Users/Student1/PycharmProjects/GCAM/checkpoints/batch_GAIN/'
+        chkpt_path = 'C:/Users/Student1/PycharmProjects/GCAM/checkpoints/batch_GAIN_MedT/'
         pathlib.Path(chkpt_path).mkdir(parents=True, exist_ok=True)
 
         torch.save({

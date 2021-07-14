@@ -35,11 +35,11 @@ class FreezedBnModel(nn.Module):
             layer.bias.requires_grad = is_train
 
 
-class batch_GAIN(nn.Module):
+class batch_GAIN_MedT(nn.Module):
     def __init__(self, model, grad_layer, num_classes, fill_color,
                  am_pretraining_epochs=1, ex_pretraining_epochs=1,
                  test_first_before_train=False, grad_magnitude=1):
-        super(batch_GAIN, self).__init__()
+        super(batch_GAIN_MedT, self).__init__()
 
         self.model = model
 

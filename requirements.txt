@@ -11,6 +11,7 @@ cytoolz==0.11.0
 dask==2021.4.0
 decorator==4.4.2
 dicom-factory==0.0.3
+easydict==1.9
 flatbuffers==1.12
 fsspec==0.9.0
 gast==0.3.3

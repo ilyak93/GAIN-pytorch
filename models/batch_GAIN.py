@@ -36,7 +36,7 @@ class FreezedBnModel(nn.Module):
 
 
 class batch_GAIN_v3_ex(nn.Module):
-    def __init__(self, model, grad_layer, num_classes, fill_color, am_pretraining_epochs=1, ex_pretraining_epochs=1, test_first_before_train=False):
+    def __init__(self, model, grad_layer, num_classes, fill_color, am_pretraining_epochs=1, ex_pretraining_epochs=1, test_first_before_train=False, grad_magnitude=1):
         super(batch_GAIN_v3_ex, self).__init__()
 
         self.model = model
@@ -61,6 +61,8 @@ class batch_GAIN_v3_ex(nn.Module):
         # sigma, omega for making the soft-mask
         self.sigma = 0.25
         self.omega = 10
+        
+        self.grad_magnitude=1
 
         self.am_pretraining_epochs = am_pretraining_epochs
         self.ex_pretraining_epochs = ex_pretraining_epochs
@@ -153,7 +155,7 @@ class batch_GAIN_v3_ex(nn.Module):
 
         masked_image = images - images * mask + mask * self.fill_color
 
-        #masked_image.register_hook(lambda grad: grad * 1000) #TODO: use this to control gradient magnitude
+        #masked_image.register_hook(lambda grad: grad * self.grad_magnitude) #TODO: use this to control gradient magnitude
 
         #for param in self.model.parameters(): #TODO: use this to control set gradients on/off
         #    param.requires_grad = False
@@ -163,7 +165,7 @@ class batch_GAIN_v3_ex(nn.Module):
         #for param in self.model.parameters(): #TODO: use this to control set gradients on/off
         #    param.requires_grad = True
 
-        #logits_am.register_hook(lambda grad: grad / 1000) #TODO: use this to control gradient magnitude
+        #logits_am.register_hook(lambda grad: grad / self.grad_magnitude) #TODO: use this to control gradient magnitude
 
         return logits_cl, logits_am, scaled_ac, mask, masked_image
 

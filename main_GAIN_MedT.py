@@ -19,7 +19,7 @@ from metrics.metrics import calc_sensitivity
 from models.batch_GAIN import batch_GAIN
 
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm, MedT_preprocess_image, \
-    MedT_preprocess_image_v3, MedT_preprocess_image_v4
+     MedT_preprocess_image_v4
 
 from PIL import Image
 
@@ -35,8 +35,6 @@ def main():
     num_classes = len(categories)
     device = torch.device('cuda:0')
     model = mobilenet_v2(pretrained=True).train().to(device)
-
-    # model = mobilenet_v2(pretrained=True).train().to(device)
 
     # change the last layer for finetuning
     classifier = model.classifier
@@ -58,38 +56,37 @@ def main():
 
     test_first_before_train = False
 
-
     epochs = 100
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
     norm = Normalize(mean=mean, std=std)
-    fill_color = norm(torch.tensor([0.4948,0.3301,0.16]).view(1,3,1,1)).cuda()
+    fill_color = norm(torch.tensor([0.4948, 0.3301, 0.16]).view(1, 3, 1, 1)).cuda()
     gain = batch_GAIN(model=model, grad_layer='features', num_classes=2,
-                         am_pretraining_epochs=200, ex_pretraining_epochs=1,
-                        fill_color=fill_color,
-                        test_first_before_train=test_first_before_train)
+                         am_pretraining_epochs=100, ex_pretraining_epochs=1,
+                         fill_color=fill_color,
+                         test_first_before_train=test_first_before_train)
     cl_factor = 1
-    ex_factor = 10
+    ex_factor = 1
     am_factor = 1
 
     chkpnt_epoch = 0
 
-    #checkpoint = torch.load('C:\Users\Student1\PycharmProjects\GCAM\checkpoints\batch_GAIN\with_am_no_ex_1_')
-    #model.load_state_dict(checkpoint['model_state_dict'])
-    #optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    #chkpnt_epoch = checkpoint['epoch']+1
-    #gain.cur_epoch = chkpnt_epoch
-    #if gain.cur_epoch > gain.am_pretraining_epochs:
+    # checkpoint = torch.load('C:\Users\Student1\PycharmProjects\GCAM\checkpoints\batch_GAIN\with_am_no_ex_1_')
+    # model.load_state_dict(checkpoint['model_state_dict'])
+    # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    # chkpnt_epoch = checkpoint['epoch']+1
+    # gain.cur_epoch = chkpnt_epoch
+    # if gain.cur_epoch > gain.am_pretraining_epochs:
     #    gain.enable_am = True
-    #if gain.cur_epoch > gain.ex_pretraining_epochs:
+    # if gain.cur_epoch > gain.ex_pretraining_epochs:
     #    gain.enable_ex = True
 
     writer = SummaryWriter(
-        "C:/Users/Student1/PycharmProjects/GCAM" + "/MedT_final_cl_gain_e_6000_b_24_v3_no_am_with_ex_pretrain_2_1_sigma_0.6_omega_30_grad_more_weight_"
+        "C:/Users/Student1/PycharmProjects/GCAM" + "/MedT_final_cl_gain_e_6000_b_24_v3_only_pos_am_with_ex_pretrain_2_1_sigma_0.7_omega_30_grad_no_color_weight_"
         + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     i = 0
     num_train_samples = 0
-    epoch_size = epoch_size*batch_size
+    epoch_size = epoch_size * batch_size
     am_i = 0
     ex_i = 0
     total_i = 0
@@ -99,16 +96,18 @@ def main():
     neg_to_write = 20
     pos_idx = list(range(pos_to_write))
     pos_count = medt_loader.get_train_pos_count()
-    neg_idx = list(range(pos_count, pos_count+neg_to_write))
-    idx = pos_idx+neg_idx
+    neg_idx = list(range(pos_count, pos_count + neg_to_write))
+    idx = pos_idx + neg_idx
     counter = dict({x: 0 for x in idx})
 
-    #masks_counter = dict()
-    #masks_count = medt_loader.get_train_pos_count()
+    # masks_counter = dict()
+    # masks_count = medt_loader.get_train_pos_count()
 
     masks_indices = medt_loader.train_dataset.get_masks_indices()
 
-    masks_to_use = int(medt_loader.get_train_pos_count() * 0.01)
+    pos_count = medt_loader.get_train_pos_count()
+
+    masks_to_use = int(pos_count * 0.05)
 
     all_masks = masks_indices
 
@@ -121,10 +120,8 @@ def main():
         train_labels = np.zeros(epoch_size * batch_size)
         dif_i = 0
 
-
         total_train_single_accuracy = 0
         total_test_single_accuracy = 0
-
 
         epoch_train_am_loss = 0
         epoch_train_cl_loss = 0
@@ -136,6 +133,10 @@ def main():
 
         IOU_prev = IOU_i
         am_count = 0
+        train_total_pos_correct = 0
+        train_total_pos_seen = 0
+        train_total_neg_correct = 0
+        train_total_neg_seen = 0
         if not test_first_before_train or (test_first_before_train and epoch != 0):
             for sample in medt_loader.datasets['train']:
 
@@ -145,7 +146,7 @@ def main():
                 all_augmented_masks = []
                 batch, augmented, augmented_mask = \
                     MedT_preprocess_image_v4(
-                        img=sample['images'][0].squeeze().permute([2,0,1]),
+                        img=sample['images'][0].squeeze().permute([2, 0, 1]),
                         mask=sample['masks'][0].unsqueeze(0),
                         train=True, mean=mean, std=std)
                 augmented_batch.append(augmented)
@@ -154,9 +155,9 @@ def main():
                     if sample['idx'][0] in used_masks:
                         augmented_masks.append(augmented_mask)
                 kk = 1
-                for img, mask in zip(sample['images'][1:],sample['masks'][1:]):
+                for img, mask in zip(sample['images'][1:], sample['masks'][1:]):
                     input_tensor, augmented, augmented_mask = \
-                        MedT_preprocess_image_v4(img=img.squeeze().permute([2,0,1]),
+                        MedT_preprocess_image_v4(img=img.squeeze().permute([2, 0, 1]),
                                                  mask=mask.unsqueeze(0), train=True,
                                                  mean=mean, std=std)
                     batch = torch.cat((batch, input_tensor), dim=0)
@@ -182,15 +183,17 @@ def main():
 
                 logits_cl, logits_am, heatmaps, masks, masked_images = gain(batch, lbs)
 
-                #indices = torch.Tensor(label_idx_list).long().to(device)
-                #class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
+                # indices = torch.Tensor(label_idx_list).long().to(device)
+                # class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
 
                 # g = make_dot(am_loss, dict(gain.named_parameters()), show_attrs = True, show_saved = True)
                 # g.save('grad_viz', train_path)
 
                 cl_loss = loss_fn(logits_cl, lbs)
 
-                total_loss = cl_loss
+                total_loss = 0
+
+                total_loss += cl_loss
 
                 pos_indices = [idx for idx, x in enumerate(sample['labels']) if x == 1]
                 cur_pos_num = len(pos_indices)
@@ -200,19 +203,25 @@ def main():
                     am_loss = am_labels_scores.sum() / am_labels_scores.size(0)
                     if gain.AM_enabled():
                         total_loss += am_loss * am_factor
+
                     epoch_train_am_loss += (am_loss * am_factor).detach().cpu().item()
                     am_count += 1
 
-
                 if i % 100 == 0:
+                    writer.add_scalar('Loss/train/am_loss', (am_loss * am_factor).detach().cpu().item(), am_i)
+                    pos_indices = [idx for idx, x in enumerate(sample['labels']) if x == 1]
+                    neg_indices = [idx for idx, x in enumerate(sample['labels']) if x == 0]
+                    pos_correct = len([pos_idx for pos_idx in pos_indices if logits_cl[pos_idx, 1] > logits_cl[pos_idx, 0]])
+                    neg_correct = len([neg_idx for neg_idx in neg_indices if logits_cl[neg_idx, 1] <= logits_cl[neg_idx, 0]])
+                    train_total_pos_seen += len(pos_indices)
+                    train_total_pos_correct += pos_correct
+                    train_total_neg_correct += neg_correct
+                    train_total_neg_seen += len(neg_indices)
                     cl_loss_only_on_am_samples = loss_fn(logits_cl.detach()[pos_indices], lbs.detach()[pos_indices])
                     writer.add_scalar('Loss/train/cl_loss_only_on_pos_samples',
                                       (cl_loss_only_on_am_samples * cl_factor).detach().cpu().item(), am_i)
-                    if cur_pos_num > 1:
-                        writer.add_scalar('Loss/train/am_loss', (am_loss * am_factor).detach().cpu().item(), am_i)
                     am_i += 1
                     writer.add_scalar('Loss/train/cl_loss', (cl_loss * cl_factor).detach().cpu().item(), i)
-
 
                 epoch_train_cl_loss += (cl_loss * cl_factor).detach().cpu().item()
 
@@ -221,10 +230,9 @@ def main():
                 train_labels[dif_i: dif_i + len(difference)] = labels.squeeze().cpu().detach().numpy()
                 dif_i += len(difference)
 
-                #IOU monitoring
+                # IOU monitoring
                 have_mask_indices = [sample['idx'].index(x) for x in sample['idx'] if x in all_masks]
                 if len(have_mask_indices) > 0 and i % 100 == 0:
-
                     m1 = torch.tensor(all_augmented_masks).cuda()
                     m2 = masks[have_mask_indices].squeeze().round().detach()
 
@@ -352,24 +360,26 @@ def main():
                                     global_step=counter[img_idx])
                     counter[img_idx] += 1
 
-
         print("pos = {} neg = {}".format(count_pos, count_neg))
         model.train(False)
         j = 0
+
+        test_total_pos_correct = 0
+        test_total_neg_correct = 0
 
         test_differences = np.zeros(len(medt_loader.datasets['test']) * batch_size)
         for sample in medt_loader.datasets['test']:
             label_idx_list = sample['labels']
 
-            batch, _, _ = MedT_preprocess_image_v4(img=sample['images'][0].squeeze().numpy(), train=False, mean=mean, std=std)
+            batch, _, _ = MedT_preprocess_image_v4(img=sample['images'][0].squeeze().numpy(), train=False, mean=mean,
+                                                   std=std)
             for img in sample['images'][1:]:
-                input_tensor, input_image, _ = MedT_preprocess_image_v4(img=img.squeeze().numpy(), train=False, mean=mean,
-                                                                  std=std)
+                input_tensor, input_image, _ = MedT_preprocess_image_v4(img=img.squeeze().numpy(), train=False,
+                                                                        mean=mean,
+                                                                        std=std)
                 batch = torch.cat((batch, input_tensor), dim=0)
             batch = batch.to(device)
             labels = torch.Tensor(label_idx_list).to(device).long()
-
-            # logits_cl = model(batch)
 
             logits_cl, logits_am, heatmaps, masks, masked_images = gain(batch, labels)
 
@@ -379,6 +389,11 @@ def main():
             gt = labels.view(-1)
             acc = (y_pred == gt).sum()
             total_test_single_accuracy += acc.detach().cpu()
+
+            pos_correct = (y_pred == gt).logical_and(gt == 1).sum()
+            neg_correct = (y_pred == gt).logical_and(gt == 0).sum()
+            test_total_neg_correct += neg_correct
+            test_total_pos_correct += pos_correct
 
             difference = (logits_cl[:, 1] - logits_cl[:, 0]).cpu().detach().numpy()
             test_differences[j * batch_size: j * batch_size + len(difference)] = difference
@@ -423,7 +438,6 @@ def main():
                 writer.add_text('Test_Heatmaps_Description/image_' + str(j) + '_' + gt, cl_text + am_text,
                                 global_step=epoch)
 
-
             j += 1
 
         num_test_samples = len(medt_loader.datasets['test']) * batch_size
@@ -439,14 +453,14 @@ def main():
             'epoch': epoch,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-         }, chkpt_path + 'with_am_with_ex_1_grad')
+        }, chkpt_path + 'with_all_am_with_ex')
 
         # epoch_train_am_ls.append(epoch_train_am_loss / num_train_samples)
 
         if (test_first_before_train and epoch > 0) or test_first_before_train == False:
             print('Average epoch train am loss: {:.3f}'.format(epoch_train_am_loss / am_count))
             # epoch_train_cl_ls.append(epoch_train_cl_loss / num_train_samples)
-            print('Average epoch train cl loss: {:.3f}'.format(epoch_train_cl_loss / (num_train_samples*batch_size)))
+            print('Average epoch train cl loss: {:.3f}'.format(epoch_train_cl_loss / (num_train_samples * batch_size)))
             # epoch_train_total_ls.append(epoch_train_total_loss / num_train_samples)
             print('Average epoch train total loss: {:.3f}'.format(epoch_train_total_loss / count_pos))
 
@@ -461,19 +475,27 @@ def main():
 
         # epoch_test_multi_accuracy.append(total_test_multi_accuracy / num_test_samples)
         # print('Average epoch multi test accuracy: {:.3f}'.format(total_test_multi_accuracy / num_test_samples))
+        pos_count = medt_loader.get_test_pos_count()
 
         if (test_first_before_train and epoch > 0) or test_first_before_train == False:
-            writer.add_scalar('Loss/train/cl_total_loss', epoch_train_cl_loss / (num_train_samples*batch_size), epoch)
+            writer.add_scalar('Loss/train/cl_total_loss', epoch_train_cl_loss / (num_train_samples * batch_size), epoch)
             writer.add_scalar('Loss/train/am_total_loss', epoch_train_am_loss / am_count, epoch)
             writer.add_scalar('Accuracy/train/cl_accuracy',
                               total_train_single_accuracy / (num_train_samples * batch_size), epoch)
+            writer.add_scalar('Accuracy/train/cl_accuracy_only_pos',
+                              train_total_pos_correct / train_total_pos_seen, epoch)
+            writer.add_scalar('Accuracy/train/cl_accuracy_only_neg',
+                              train_total_neg_correct / train_total_neg_seen, epoch)
+            writer.add_scalar('Accuracy/test/cl_accuracy_only_pos',
+                              test_total_pos_correct / pos_count, epoch)
+            writer.add_scalar('Accuracy/test/cl_accuracy_only_neg',
+                              test_total_neg_correct / (num_test_samples-pos_count), epoch)
 
             all_sens, _ = calc_sensitivity(train_labels, train_differences)
             writer.add_scalar('ROC/train/ROC_0.1', all_sens[0], epoch)
             writer.add_scalar('ROC/train/ROC_0.05', all_sens[1], epoch)
         writer.add_scalar('Accuracy/test/cl_accuracy', total_test_single_accuracy / num_test_samples, epoch)
 
-        pos_count = medt_loader.get_test_pos_count()
         ones = torch.ones(pos_count)
         test_labels = torch.zeros(num_test_samples)
         test_labels[0:len(ones)] = ones
@@ -482,7 +504,7 @@ def main():
         writer.add_scalar('ROC/test/ROC_0.1', all_sens[0], epoch)
         writer.add_scalar('ROC/test/ROC_0.05', all_sens[1], epoch)
 
-        writer.add_scalar('IOU/train/average_IOU_per_sample', epoch_IOU / (IOU_i-IOU_prev), epoch)
+        writer.add_scalar('IOU/train/average_IOU_per_sample', epoch_IOU / (IOU_i - IOU_prev), epoch)
 
 
 if __name__ == '__main__':

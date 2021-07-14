@@ -38,7 +38,7 @@ $ python main_MedT.py --batchsize=24 --total_epochs=50 --nepoch=6000 --nepoch_am
 			--output_dir=./ --checkpoint_name=args
 ```
 
---total_epochs: number of total epoch to train
+--total_epochs: number of total epoch to train <br/>
 --nepoch: number of iterations per epoch
 
 ### Visual Examples of monitoring measurements and attention maps visualizations ###

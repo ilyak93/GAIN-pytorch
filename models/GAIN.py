@@ -1,3 +1,5 @@
+from random import random
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -6,9 +8,9 @@ import torch.nn.functional as F
 from utils.image import denorm
 
 
-class GAIN(nn.Module):
+class batch_GAIN_VOC(nn.Module):
     def __init__(self, model, grad_layer, num_classes, pretraining_epochs=1, test_first_before_train=False):
-        super(GAIN, self).__init__()
+        super(batch_GAIN_VOC, self).__init__()
 
         self.model = model
 
@@ -26,8 +28,8 @@ class GAIN(nn.Module):
         self._register_hooks(grad_layer)
 
         # sigma, omega for making the soft-mask
-        self.sigma = 0.25 #TODO: maybe to make it trainable, anyway think how to tune it, maybe hypertuning or other smart choice.
-        self.omega = 10 #TODO: maybe to make it trainable, anyway think how to tune it, maybe hypertuning or other smart choice.
+        self.sigma = 0.5
+        self.omega = 10
 
         self.pretraining_epochs = pretraining_epochs
         self.cur_epoch = 0
@@ -65,6 +67,13 @@ class GAIN(nn.Module):
 
         return ohe
 
+    def _to_ohe_multibatch(self, labels):
+
+        ohe = torch.nn.functional.one_hot(labels, self.num_classes).float()
+        ohe = torch.autograd.Variable(ohe)
+
+        return ohe
+
     def forward(self, images, labels): #TODO: no need for saving the hook results ; Put Nan
 
         # Remember, only do back-probagation during the training. During the validation, it will be affected by bachnorm
@@ -78,27 +87,23 @@ class GAIN(nn.Module):
 
             _, _, img_h, img_w = images.size()
 
-            self.model.train(True) #TODO: use is_train
+            self.model.train(is_train)  # TODO: use is_train
             logits_cl = self.model(images)  # BS x num_classes
             self.model.zero_grad()
 
             if not is_train:
                 pred = F.softmax(logits_cl).argmax(dim=1)
-                labels_ohe = self._to_ohe(pred).cuda()
+                labels_ohe = self._to_ohe_multibatch(pred).cuda()
             else:
-                labels_ohe = self._to_ohe(labels).cuda()
+                if type(labels) is tuple or type(labels) is list:
+                    labels_ohe = torch.stack(labels)
+                else:
+                    labels_ohe = labels
 
-            #gradient = logits * labels_ohe
-            grad_logits = (logits_cl * labels_ohe).sum()  # BS x num_classes
-            grad_logits.backward(retain_graph=True)
+            # gradient = logits * labels_ohe
+            grad_logits = (logits_cl * labels_ohe).sum(dim=1)  # BS x num_classes
+            grad_logits.backward(retain_graph=True, gradient=torch.ones_like(grad_logits))
             self.model.zero_grad()
-
-        if is_train: #TODO: check this
-            self.model.train(True)
-        else:
-            self.model.train(False)
-            self.model.eval()
-            logits_cl = self.model(images)
 
         backward_features = self.backward_features  # BS x C x H x W
         fl = self.feed_forward_features  # BS x C x H x W
@@ -109,21 +114,23 @@ class GAIN(nn.Module):
         Ac = F.upsample_bilinear(Ac, size=images.size()[2:])
         heatmap = Ac
 
-        Ac_min = Ac.min()
-        Ac_max = Ac.max()
+        Ac_min, _ = Ac.view(len(images), -1).min(dim=1)
+        Ac_max, _ = Ac.view(len(images), -1).max(dim=1)
         import sys
-        eps = sys.float_info.epsilon
-        scaled_ac = (Ac - Ac_min) / (Ac_max - Ac_min + eps)
+        eps = torch.tensor(sys.float_info.epsilon).cuda()
+        scaled_ac = (Ac - Ac_min.view(-1, 1, 1, 1)) / \
+                    (Ac_max.view(-1, 1, 1, 1) - Ac_min.view(-1, 1, 1, 1)
+                     + eps.view(1, 1, 1, 1))
         mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
         masked_image = images - images * mask
 
-       # for param in self.model.parameters():
-            #param.requires_grad = False
+        # for param in self.model.parameters():
+        # param.requires_grad = False
 
         logits_am = self.model(masked_image)
 
-        #for param in self.model.parameters():
-            #param.requires_grad = True
+        # for param in self.model.parameters():
+        # param.requires_grad = True
 
         return logits_cl, logits_am, heatmap, masked_image, mask
 

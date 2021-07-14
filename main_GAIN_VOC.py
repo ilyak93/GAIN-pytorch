@@ -15,7 +15,7 @@ from dataloaders.MedTData import MedT_Loader
 from metrics.metrics import calc_sensitivity
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm
 
-from models.batch_GAIN_v2 import GAIN
+from models.batch_GAIN_v2 import batch_GAIN_v2
 from PIL import Image
 
 from torch.utils.tensorboard import SummaryWriter
@@ -64,7 +64,7 @@ def main():
     epochs = 100
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-    gain = GAIN(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5,
+    gain = batch_GAIN_VOC(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5,
                 test_first_before_train=test_first_before_train)
 
     chkpnt_epoch = 0
@@ -74,7 +74,7 @@ def main():
     # chkpnt_epoch = checkpoint['epoch']+1
 
     writer = SummaryWriter(
-        "C:/Users/Student1/PycharmProjects/GCAM" + "/VOC_multibatch_GAIN_" +
+        "C:/Users/Student1/PycharmProjects/GCAM" + "/VOC_multibatch_GAIN_without_resize" +
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     i=0
     num_train_samples = 0
@@ -174,13 +174,17 @@ def main():
                     for t in range(len(batch)):
                         num_of_labels = len(sample[2][t])
                         one_heatmap = heatmap[t].squeeze().cpu().detach().numpy()
-                        
+
                         one_augmented_im = torch.tensor(np.array(augmented_batch[t])).to(device).unsqueeze(0)
                         one_masked_image = masked_image[t].detach().squeeze()
                         htm = deprocess_image(one_heatmap)
                         visualization, red_htm = show_cam_on_image(one_augmented_im.cpu().detach().numpy(), htm, True)
                         #plt.imshow(red_htm)
                         #plt.show()
+                        #plt.close()
+                        #plt.imshow(visualization[0])
+                        #plt.show()
+                        #plt.close()
                         viz = torch.from_numpy(visualization).to(device)
                         masked_im = denorm(one_masked_image, mean, std)
                         masked_im = (masked_im.squeeze().permute([1, 2, 0])
@@ -188,6 +192,7 @@ def main():
                             .astype(np.uint8)
                         #plt.imshow(masked_im)
                         #plt.show()
+                        #plt.close()
                         orig = sample[0][t].unsqueeze(0)
                         masked_im = torch.from_numpy(masked_im).unsqueeze(0).to(device)
                         orig_viz = torch.cat((orig, one_augmented_im, viz, masked_im), 0)

@@ -57,9 +57,7 @@ $ python main_MedT.py --batchsize=24 --total_epochs=50 --nepoch=6000 --nepoch_am
 A few examples of current monitoring format.
 
 Loss % ROC % IOU % Accuracy monitoring (pretty much as expected):
-
-
-![Numeric measuremnets monitoring](https://ibb.co/z47rPfR)
+<a href="https://ibb.co/z47rPfR"><img src="https://i.ibb.co/DR8twKC/Num.jpg" alt="Num" border="0"></a>
 
 
 ### Pre ###

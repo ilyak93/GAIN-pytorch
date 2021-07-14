@@ -54,6 +54,21 @@ $ python main_MedT.py --batchsize=24 --total_epochs=50 --nepoch=6000 --nepoch_am
 
 ### Visual Examples of monitoring measurements and attention maps visualizations ###
 
+To open tensorboard monitoring, open `Anaconda Prompt` or any other shell like cmd and e.t.c<br/>
+Run the following command:
+```
+tensorboard --port=6009  --samples_per_plugin images=999999,text=999999 --logdir={log_folder_name}
+```
+
+For example:
+```
+tensorboard --port=6009  --samples_per_plugin images=999999,text=999999 \
+ --logdir=C:\Users\Student1\PycharmProjects\GCAM\MedT_final_cl_gain_e_6000_b_24_v3_with_all_am_with_ex_pretrain_2_1_sigma_0.6_omega_30_grad_2021-07-01_22-48-56`
+```
+
+where instead of '{log_folder_name}', put your own logging which you named using this --log_name argument.<br/>
+use the full path if you have troubles with relative.
+
 A few examples of current monitoring format.
 
 Loss % ROC % IOU % Accuracy monitoring (pretty much as expected):

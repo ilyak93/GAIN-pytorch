@@ -52,3 +52,7 @@ See `easle.py` for the previou
 
 Wipochs like:
 ![shift with autoencoder](https://i.imgur.com/M1.gif)
+
+
+## Use case in a Project ##
+Will be uploaded soon.

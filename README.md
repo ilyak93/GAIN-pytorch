@@ -5,7 +5,8 @@
 
 This is a Pytorch implementation of the GAIN algorithms presented in the following paper ([paper CVPR2018](https://arxiv.org/abs/1802.10171)):
 
-Kunpeng Li, Ziyan Wu, Kuan-Chuan Peng, Jan Ernst, Yun Fu. Tell Me Where to Look: Guided Attention Inference Network.
+Kunpeng Li, Ziyan Wu, Kuan-Chuan Peng, Jan Ernst, Yun Fu.  
+Tell Me Where to Look: Guided Attention Inference Network.
 
 If you use this code in your research, please put a link to this github repository.
 ```

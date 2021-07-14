@@ -55,4 +55,4 @@ Wipochs like:
 
 
 ## Use case in a Project ##
-Will be uploaded soon.
+Link will be uploaded soon.

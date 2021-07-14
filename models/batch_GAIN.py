@@ -36,11 +36,14 @@ class FreezedBnModel(nn.Module):
 
 
 class batch_GAIN_v3_ex(nn.Module):
-    def __init__(self, model, grad_layer, num_classes, fill_color, am_pretraining_epochs=1, ex_pretraining_epochs=1, test_first_before_train=False, grad_magnitude=1):
+    def __init__(self, model, grad_layer, num_classes, fill_color,
+                 am_pretraining_epochs=1, ex_pretraining_epochs=1,
+                 test_first_before_train=False, grad_magnitude=1):
         super(batch_GAIN_v3_ex, self).__init__()
 
         self.model = model
 
+        #using freezed BN model configuration on the second path in AM training to not influence the statistics
         self.freezed_bn_model = FreezedBnModel(model)
 
         # print(self.model)
@@ -59,8 +62,8 @@ class batch_GAIN_v3_ex(nn.Module):
         self._register_hooks(grad_layer)
 
         # sigma, omega for making the soft-mask
-        self.sigma = 0.25
-        self.omega = 10
+        self.sigma = 0.7
+        self.omega = 30
         
         self.grad_magnitude=1
 

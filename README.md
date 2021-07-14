@@ -71,8 +71,15 @@ use the full path if you have troubles with relative.
 
 A few examples of current monitoring format.
 
-Loss % ROC % IOU % Accuracy monitoring (pretty much as expected):
+Loss & ROC & IOU & Accuracy monitoring (pretty much as expected):
 <a href="https://ibb.co/z47rPfR"><img src="https://i.ibb.co/DR8twKC/Num.jpg" alt="Num" border="0"></a>
+
+Attention Maps visualizations:
+<a href="https://ibb.co/z47rPfR"><img src="https://i.ibb.co/DR8twKC/Num.jpg" alt="Num" border="0"></a>
+
+<a href="https://ibb.co/ySJp0mm"><img src="https://i.ibb.co/ZmCSdRR/viz3.jpg" alt="viz3" border="0"></a>
+<a href="https://ibb.co/dmqmNWb"><img src="https://i.ibb.co/Sf8fksQ/viz1.jpg" alt="viz1" border="0"></a>
+<a href="https://ibb.co/591jKpm"><img src="https://i.ibb.co/xs2gF9W/viz2.jpg" alt="viz2" border="0"></a>
 
 
 ### Pre ###

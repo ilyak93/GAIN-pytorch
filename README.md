@@ -24,7 +24,7 @@ In general, you can use the code for any purpose with proper attribution. If you
 
 * Python >= 3.7
 * [Pytorch](http://pytorch.org/) >= v1.8.1
-* [Tensorboard]() >= v2.5.0
+* [Tensorboard](https://www.tensorflow.org/tensorboard) >= v2.5.0
 
 ## Run the script ##
 

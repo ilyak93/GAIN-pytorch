@@ -51,6 +51,10 @@ $ python main_MedT.py --batchsize=24 --total_epochs=50 --nepoch=6000 --nepoch_am
 --input_dir: where the data is dislocated with 'traning' and 'validation' folders.<br/>
 --output_dir: where the tb output and checkpoints folder will be dislocated.<br/>
  --checkpoint_name: according to 'which output_dir/checkpoints/checkpoint_name+date+time' will be created 
+ 
+ For debug you can put all the files into your IDE in a new project and run this script defining the arguments<br/>
+ or run directly the main script will all the arguments embedded and changing them manually and not as arguments to main.<br/>
+ The script is `main_GAIN_MedT.py`.
 
 ### Visual Examples of monitoring measurements and attention maps visualizations ###
 

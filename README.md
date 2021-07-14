@@ -54,13 +54,12 @@ $ python main_MedT.py --batchsize=24 --total_epochs=50 --nepoch=6000 --nepoch_am
 
 ### Visual Examples of monitoring measurements and attention maps visualizations ###
 
-Generate
-```
-python 
-```
-This creates 
+A few examples of current monitoring format.
 
-![generated ground truth](https://i.imgur.com/Hx.png)
+Loss % ROC % IOU % Accuracy monitoring (pretty much as expected):
+
+
+![Numeric measuremnets monitoring](https://ibb.co/z47rPfR)
 
 
 ### Pre ###

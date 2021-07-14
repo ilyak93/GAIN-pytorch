@@ -35,7 +35,7 @@ $ python main_MedT.py --batchsize=24 --total_epochs=50 --nepoch=6000 --nepoch_am
 			--masks_to_use=0.1 --lr=0.0001 --pos_to_write_train=50 --neg_to_write_train=20 \
 			--pos_to_write_test=50 --neg_to_write_test=50 --log_name=my_tensorboard_log --test_before_train=0 \
 			--batch_pos_dist=0.25 --input_dir=C:/MDT_dataset/SB3_ulcers_mined_roi_mult/ \
-			--output_dir=./ --checkpoint_name=args
+			--output_dir=./ --checkpoint_name=my_checkpoint
 ```
 --batchsize: batch size <br/>
 --total_epochs: number of total epoch to train <br/>
@@ -48,6 +48,9 @@ $ python main_MedT.py --batchsize=24 --total_epochs=50 --nepoch=6000 --nepoch_am
 --pos/neg_to_write_train/test: how many pos/neg samples to monitor in train-set/test-set <br/>
 --log_name: name of log tb save the monitoring with the current date and time after the name.<br/>
 --batch_pos_dist: distribution per batch of positives and by compelement negatives. For example for value 0.25 and 2 labels the distribution per batch is [0.75, 0.25].<br/>
+--input_dir: where the data is dislocated with 'traning' and 'validation' folders.<br/>
+--output_dir: where the tb output and checkpoints folder will be dislocated.<br/>
+ --checkpoint_name: according to 'which output_dir/checkpoints/checkpoint_name+date+time' will be created 
 
 ### Visual Examples of monitoring measurements and attention maps visualizations ###
 

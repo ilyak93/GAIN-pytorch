@@ -26,6 +26,8 @@ In general, you can use the code for any purpose with proper attribution. If you
 * [Pytorch](http://pytorch.org/) >= v1.8.1
 * [Tensorboard](https://www.tensorflow.org/tensorboard) >= v2.5.0
 
+Ensure on PyTorch & NVdidia websites you have the appropriate CUDA drivers and Cudnn version.
+
 ## Run the script ##
 
 All you need to do to run the algorithm is the following command
@@ -72,6 +74,9 @@ tensorboard --port=6009  --samples_per_plugin images=999999,text=999999 \
 
 where instead of '{log_folder_name}', put your own logging which you named using this --log_name argument.<br/>
 use the full path if you have troubles with relative.
+
+Choose any port you would like, if you erase this parameter it will choose the free port for you.
+--samples_per_plugin images=999999,text=999999 parameter ensures that you can view in your tensorboard <br/>as much images and text steps as you want.
 
 A few examples of current monitoring format.
 

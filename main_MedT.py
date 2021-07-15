@@ -121,7 +121,7 @@ def main(args):
     #    gain.enable_ex = True
 
     # "C:/Users/Student1/PycharmProjects/GCAM" + "/MedT_final_cl_gain_e_6000_b_24_v3_no_am_with_ex_pretrain_2_1_sigma_0.6_omega_30_grad_more_weight_"
-    writer = SummaryWriter(args.output_dir + args.log_name+ datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    writer = SummaryWriter(args.output_dir + args.log_name +'_'+datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     i = 0
     num_train_samples = 0
     epoch_size = epoch_size*batch_size

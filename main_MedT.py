@@ -221,15 +221,13 @@ def main(args):
 
                 logits_cl, logits_am, heatmaps, masks, masked_images = gain(batch, lbs)
 
-                #indices = torch.Tensor(label_idx_list).long().to(device)
-                #class_onehot = torch.nn.functional.one_hot(indices, num_classes).sum(dim=0).unsqueeze(0).float()
-
                 # g = make_dot(am_loss, dict(gain.named_parameters()), show_attrs = True, show_saved = True)
                 # g.save('grad_viz', train_path)
 
                 cl_loss = loss_fn(logits_cl, lbs)
 
-                total_loss = cl_loss
+                total_loss = 0
+                total_loss += cl_loss
 
                 pos_indices = [idx for idx, x in enumerate(sample['labels']) if x == 1]
                 cur_pos_num = len(pos_indices)
@@ -254,25 +252,6 @@ def main(args):
                 epoch_train_am_loss += (am_loss * am_factor).detach().cpu().item()
                 am_count += 1
                 '''
-
-                if i % 100 == 0:
-                    writer.add_scalar('Loss/train/am_loss', (am_loss * am_factor).detach().cpu().item(), am_i)
-                    pos_indices = [idx for idx, x in enumerate(sample['labels']) if x == 1]
-                    neg_indices = [idx for idx, x in enumerate(sample['labels']) if x == 0]
-                    pos_correct = len(
-                        [pos_idx for pos_idx in pos_indices if logits_cl[pos_idx, 1] > logits_cl[pos_idx, 0]])
-                    neg_correct = len(
-                        [neg_idx for neg_idx in neg_indices if logits_cl[neg_idx, 1] <= logits_cl[neg_idx, 0]])
-                    train_total_pos_seen += len(pos_indices)
-                    train_total_pos_correct += pos_correct
-                    train_total_neg_correct += neg_correct
-                    train_total_neg_seen += len(neg_indices)
-                    cl_loss_only_on_am_samples = loss_fn(logits_cl.detach()[pos_indices], lbs.detach()[pos_indices])
-                    writer.add_scalar('Loss/train/cl_loss_only_on_pos_samples',
-                                      (cl_loss_only_on_am_samples * cl_factor).detach().cpu().item(), am_i)
-                    am_i += 1
-                    writer.add_scalar('Loss/train/cl_loss', (cl_loss * cl_factor).detach().cpu().item(), i)
-
 
                 epoch_train_cl_loss += (cl_loss * cl_factor).detach().cpu().item()
 
@@ -312,10 +291,6 @@ def main(args):
                     total_loss += ex_factor * ex_loss
                     ex_i += 1
 
-                if i % 100 == 0:
-                    writer.add_scalar('Loss/train/total_loss', total_loss.detach().cpu().item(), total_i)
-                    total_i += 1
-
                 total_loss.backward()
                 optimizer.step()
 
@@ -325,7 +300,31 @@ def main(args):
                 gt = labels.view(-1)
                 acc = (y_pred == gt).sum()
                 total_train_single_accuracy += acc.detach().cpu()
+
+                if i % 100 == 0:
+                    writer.add_scalar('Loss/train/am_loss', (am_loss * am_factor).detach().cpu().item(), am_i)
+                    pos_indices = [idx for idx, x in enumerate(sample['labels']) if x == 1]
+                    neg_indices = [idx for idx, x in enumerate(sample['labels']) if x == 0]
+                    pos_correct = len(
+                        [pos_idx for pos_idx in pos_indices if logits_cl[pos_idx, 1] > logits_cl[pos_idx, 0]])
+                    neg_correct = len(
+                        [neg_idx for neg_idx in neg_indices if logits_cl[neg_idx, 1] <= logits_cl[neg_idx, 0]])
+                    train_total_pos_seen += len(pos_indices)
+                    train_total_pos_correct += pos_correct
+                    train_total_neg_correct += neg_correct
+                    train_total_neg_seen += len(neg_indices)
+                    cl_loss_only_on_am_samples = loss_fn(logits_cl.detach()[pos_indices], lbs.detach()[pos_indices])
+                    writer.add_scalar('Loss/train/cl_loss_only_on_pos_samples',
+                                      (cl_loss_only_on_am_samples * cl_factor).detach().cpu().item(), am_i)
+                    am_i += 1
+                    writer.add_scalar('Loss/train/cl_loss', (cl_loss * cl_factor).detach().cpu().item(), i)
+                    writer.add_scalar('Loss/train/total_loss', total_loss.detach().cpu().item(), total_i)
+                    total_i += 1
+
                 i += 1
+
+
+
                 if epoch == 0 and test_first_before_train == False:
                     num_train_samples += 1
                 if epoch == 1 and test_first_before_train == True:

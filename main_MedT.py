@@ -121,7 +121,7 @@ def main(args):
     #    gain.enable_ex = True
 
     # "C:/Users/Student1/PycharmProjects/GCAM" + "/MedT_final_cl_gain_e_6000_b_24_v3_no_am_with_ex_pretrain_2_1_sigma_0.6_omega_30_grad_more_weight_"
-    writer = SummaryWriter(args.output_dir + datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    writer = SummaryWriter(args.output_dir + args.log_name+ datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     i = 0
     num_train_samples = 0
     epoch_size = epoch_size*batch_size
@@ -547,9 +547,10 @@ def main(args):
             writer.add_scalar('Accuracy/test/cl_accuracy_only_neg',
                               test_total_neg_correct / (num_test_samples - pos_count), epoch)
 
-            all_sens, _ = calc_sensitivity(train_labels, train_differences)
+            all_sens, auc = calc_sensitivity(train_labels, train_differences)
             writer.add_scalar('ROC/train/ROC_0.1', all_sens[0], epoch)
             writer.add_scalar('ROC/train/ROC_0.05', all_sens[1], epoch)
+            writer.add_scalar('ROC/train/AUC', auc, epoch)
         writer.add_scalar('Accuracy/test/cl_accuracy', total_test_single_accuracy / num_test_samples, epoch)
 
         pos_count = medt_loader.get_test_pos_count()
@@ -557,9 +558,10 @@ def main(args):
         test_labels = torch.zeros(num_test_samples)
         test_labels[0:len(ones)] = ones
         test_labels = test_labels.int()
-        all_sens, _ = calc_sensitivity(test_labels.cpu().numpy(), test_differences)
+        all_sens, auc = calc_sensitivity(test_labels.cpu().numpy(), test_differences)
         writer.add_scalar('ROC/test/ROC_0.1', all_sens[0], epoch)
         writer.add_scalar('ROC/test/ROC_0.05', all_sens[1], epoch)
+        writer.add_scalar('ROC/test/AUC', auc, epoch)
 
         writer.add_scalar('IOU/train/average_IOU_per_sample', epoch_IOU / (IOU_i-IOU_prev), epoch)
 

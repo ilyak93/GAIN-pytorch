@@ -9,8 +9,10 @@ from torch.utils import data
 from torch.utils.data import SequentialSampler, RandomSampler
 from sys import maxsize as maxint
 
+from utils.image import MedT_preprocess_image_v4
 
-def build_balanced_dataloader(dataset, labels, target_weight=None, batch_size=1, steps_per_epoch=500, num_workers=0):
+
+def build_balanced_dataloader(dataset, labels, collate_fn, target_weight=None, batch_size=1, steps_per_epoch=500, num_workers=1):
     assert len(dataset) == len(labels)
     labels = np.asarray(labels)
     ulabels, label_count = np.unique(labels, return_counts=True)
@@ -31,7 +33,7 @@ def build_balanced_dataloader(dataset, labels, target_weight=None, batch_size=1,
                         shuffle=False,
                         num_workers=num_workers,
                         sampler=weighted_sampler,
-                        collate_fn=my_collate)
+                        collate_fn=collate_fn)
     return loader
 
 
@@ -53,7 +55,7 @@ def load_func(path, file, all_files):
 
 
 class MedT_Train_Data(data.Dataset):
-    def __init__(self, root_dir='train', loader=load_func):
+    def __init__(self, masks_to_use, mean, std, transform, root_dir='train', loader=load_func):
         self.pos_root_dir = root_dir+'Pos/'
         self.neg_root_dir = root_dir + 'Neg/'
         all_neg_files = os.listdir(self.neg_root_dir)
@@ -64,6 +66,11 @@ class MedT_Train_Data(data.Dataset):
         self.all_cl_images = pos_cl_images+all_neg_files
         self.pos_num_of_samples = len(pos_cl_images)
         self.loader = loader
+        mask_max_idx = int(self.pos_num_of_samples * masks_to_use)
+        self.used_masks = self.masks_indices[:mask_max_idx]
+        self.mean = mean
+        self.std = std
+        self.transform = transform
 
 
     def __len__(self):
@@ -71,9 +78,27 @@ class MedT_Train_Data(data.Dataset):
 
     def __getitem__(self, index):
         if index < self.pos_num_of_samples:
-            res = list(self.loader(self.pos_root_dir, self.all_cl_images[index], self.all_files))
+            res = list(self.loader(self.pos_root_dir,
+                                   self.all_cl_images[index], self.all_files))
+            preprocessed, augmented, augmented_mask = \
+                self.transform(img=res[0].squeeze().permute([2, 0, 1]),
+                                         mask=res[1].unsqueeze(0), train=True,
+                                         mean=self.mean, std=self.std)
+            if index in self.used_masks:
+                res = [res[0]] + [preprocessed] + [augmented] + [res[1]]+ \
+                      [augmented_mask]+[True] + [res[2]]
+            else:
+                res = [res[0]] + [preprocessed] + [augmented] + [res[1]] +\
+                      [augmented_mask]+[False] + [res[2]]
         else:
-            res = list(self.loader(self.neg_root_dir, self.all_cl_images[index], None))
+            res = list(self.loader(self.neg_root_dir,
+                                   self.all_cl_images[index], None))
+            preprocessed, augmented, augmented_mask = \
+                self.transform(img=res[0].squeeze().permute([2, 0, 1]),
+                                         mask=res[1].unsqueeze(0), train=True,
+                                         mean=self.mean, std=self.std)
+            res = [res[0]] + [preprocessed] + [augmented] + [res[1]] + \
+                  [np.array(-1)] + [False] + [res[2]]
         res.append(index)
         return res
 
@@ -88,21 +113,32 @@ class MedT_Train_Data(data.Dataset):
 
 
 class MedT_Test_Data(data.Dataset):
-    def __init__(self, root_dir='train', loader=load_func):
+    def __init__(self, mean, std, transform, root_dir='validation', loader=load_func):
         self.pos_root_dir = root_dir+'Pos/'
         self.neg_root_dir = root_dir + 'Neg/'
-        self.all_files = os.listdir(self.pos_root_dir)+os.listdir(self.neg_root_dir)
+        self.all_files = os.listdir(self.pos_root_dir) + \
+                         os.listdir(self.neg_root_dir)
         self.pos_num_of_samples = len(os.listdir(self.pos_root_dir))
         self.loader = loader
+        self.mean = mean
+        self.std = std
+        self.transform = transform
 
     def __len__(self):
         return len(self.all_files)
 
     def __getitem__(self, index):
         if index < self.pos_num_of_samples:
-            res = list(self.loader(self.pos_root_dir, self.all_files[index], None))
+            res = list(self.loader(self.pos_root_dir,
+                                   self.all_files[index], None))
         else:
-            res = list(self.loader(self.neg_root_dir, self.all_files[index], None))
+            res = list(self.loader(self.neg_root_dir,
+                                   self.all_files[index], None))
+        preprocessed, augmented, _ = \
+            self.transform(img=res[0].squeeze().numpy(),
+                           train=False, mean=self.mean, std=self.std)
+        res = [res[0]] + [preprocessed] + [augmented] + [res[1]] + [np.array(-1)] +\
+              [False] + [res[2]]
         res.append(index)
         return res
 
@@ -110,15 +146,20 @@ class MedT_Test_Data(data.Dataset):
         return self.pos_num_of_samples
 
 
-def my_collate(batch):
-    imgs, masks, labels, indices = zip(*batch)
-    res_dict = {'images': imgs, 'masks': masks, 'labels': labels, 'idx': indices}
-    return res_dict
+
 
 class MedT_Loader():
-    def __init__(self, root_dir, target_weight, batch_size=1, steps_per_epoch=6000):
-        self.train_dataset = MedT_Train_Data(root_dir+'training/')
-        self.test_dataset = MedT_Test_Data(root_dir + 'validation/')
+    def __init__(self, root_dir, target_weight, masks_to_use, mean, std,
+                 transform, collate_fn, batch_size=1, steps_per_epoch=6000,
+                 num_workers=3):
+
+        self.train_dataset = MedT_Train_Data(root_dir=root_dir+'training/',
+                                             masks_to_use=masks_to_use,
+                                             mean=mean, std=std,
+                                             transform=transform)
+        self.test_dataset = MedT_Test_Data(root_dir=root_dir + 'validation/',
+                                           mean=mean, std=std,
+                                           transform=transform)
 
         #train_sampler = RandomSampler(self.train_dataset, num_samples=maxint,
         #                              replacement=True)
@@ -136,25 +177,28 @@ class MedT_Loader():
         ones = torch.ones(self.train_dataset.positive_len())
         labels = torch.zeros(len(self.train_dataset))
         labels[0:len(ones)] = ones
+
         train_loader = build_balanced_dataloader(
                     self.train_dataset, labels.int(),
                     target_weight=target_weight, batch_size=batch_size,
-                    steps_per_epoch=steps_per_epoch)
+                    steps_per_epoch=steps_per_epoch, num_workers=num_workers,
+                    collate_fn=collate_fn)
 
         test_loader = torch.utils.data.DataLoader(
             self.test_dataset,
-            num_workers=0,
+            num_workers=num_workers,
             batch_size=batch_size,
             sampler=test_sampler,
-            collate_fn=my_collate)
+            collate_fn=collate_fn)
 
         train_as_test_loader = torch.utils.data.DataLoader(
             self.train_dataset,
-            num_workers=0,
+            num_workers=num_workers,
             batch_size=batch_size,
             sampler=train_as_test_sampler)
 
-        self.datasets = {'train': train_loader, 'test': test_loader, 'train_as_test': train_as_test_loader }
+        self.datasets = {'train': train_loader, 'test': test_loader,
+                         'train_as_test': train_as_test_loader }
 
     def get_test_pos_count(self, train_as_test=False):
         if train_as_test:

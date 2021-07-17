@@ -49,6 +49,7 @@ $ python --batchsize=20 --total_epochs=50 --nepoch=6000 --nepoch_am=100 --nepoch
 --lr: initial learning rate <br/>
 --pos/neg_to_write_train/test: how many pos/neg samples to monitor in train-set/test-set <br/>
 --pos/neg_to_write_train/test: how many pos/neg samples to monitor in train-set/test-set <br/>
+--write_every: how often to write numeric measurements (losses and e.t.c) to tb
 --log_name: name of log tb save the monitoring with the current date and time after the name.<br/>
 --batch_pos_dist: distribution per batch of positives and by compelement negatives. For example for value 0.25 and 2 labels the distribution per batch is [0.75, 0.25].<br/>
 --input_dir: where the data is dislocated with 'traning' and 'validation' folders.<br/>

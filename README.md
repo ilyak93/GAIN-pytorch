@@ -33,11 +33,12 @@ Ensure on PyTorch & NVdidia websites you have the appropriate CUDA drivers and C
 All you need to do to run the algorithm is the following command
 
 ```
-$ python main_MedT.py --batchsize=24 --total_epochs=50 --nepoch=6000 --nepoch_am=100 --nepoch_ex=1 \
-			--masks_to_use=0.1 --lr=0.0001 --pos_to_write_train=50 --neg_to_write_train=20 \
-			--pos_to_write_test=50 --neg_to_write_test=50 --log_name=my_tensorboard_log --test_before_train=0 \
-			--batch_pos_dist=0.25 --input_dir=C:/MDT_dataset/SB3_ulcers_mined_roi_mult/ \
-			--output_dir=./ --checkpoint_name=my_checkpoint
+$ python --batchsize=20 --total_epochs=50 --nepoch=6000 --nepoch_am=100 --nepoch_ex=1 \
+         --masks_to_use=1 --lr=0.0001 --pos_to_write_train=50 --neg_to_write_train=20 \
+		 --pos_to_write_test=50 --neg_to_write_test=50 --log_name=ex_1_all --cl_weight=1 \
+		 --am_weight=1 --ex_weight=1 ----am_on_all=1 --test_before_train=0 \
+		 --batch_pos_dist=0.25 --input_dir=C:/MDT_dataset/SB3_ulcers_mined_roi_mult/ \ 
+		 --output_dir=./ --checkpoint_name=ex_1_all
 ```
 --batchsize: batch size <br/>
 --total_epochs: number of total epoch to train <br/>
@@ -53,6 +54,10 @@ $ python main_MedT.py --batchsize=24 --total_epochs=50 --nepoch=6000 --nepoch_am
 --input_dir: where the data is dislocated with 'traning' and 'validation' folders.<br/>
 --output_dir: where the tb output and checkpoints folder will be dislocated.<br/>
  --checkpoint_name: according to 'which output_dir/checkpoints/checkpoint_name+date+time' will be created 
+ --cl_weight: weight of classification loss 
+--am_weight: weight of attention-mining loss  
+--ex_weight: weight of extra-supervision loss 
+--am_on_all: train the attention-mining loss on the positives images only or on all the images.
  
  For debug you can put all the files into your IDE in a new project and run this script defining the arguments<br/>
  or run directly the main script will all the arguments embedded and changing them manually and not as arguments to main.<br/>

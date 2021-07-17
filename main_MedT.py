@@ -28,7 +28,7 @@ from utils.image import show_cam_on_image, preprocess_image, deprocess_image, de
 from torch.utils.tensorboard import SummaryWriter
 from datetime import datetime
 
-from config import cfg
+from configs.MDTconfig import cfg
 
 def my_collate(batch):
     orig_imgs, preprocessed_imgs, agumented_imgs, masks, preprocessed_masks,\
@@ -346,7 +346,7 @@ def handle_AM_loss(cur_pos_num, am_scores, pos_indices, model, total_loss,
             writer.add_scalar('Loss/train/am_loss',
                               (am_loss * args.am_weight).detach().cpu().item(),
                               cfg['am_i'])
-        epoch_train_am_loss += (am_loss * args.am_factor).detach().cpu().item()
+        epoch_train_am_loss += (am_loss * args.am_weight).detach().cpu().item()
         am_count += 1
     return total_loss, epoch_train_am_loss, am_count
 

@@ -7,12 +7,45 @@ import torch.nn.functional as F
 
 from utils.image import denorm
 
+def is_bn(m):
+    return isinstance(m, nn.modules.batchnorm.BatchNorm2d) | isinstance(m, nn.modules.batchnorm.BatchNorm1d)
+
+def take_bn_layers(model):
+    for m in model.modules():
+        if is_bn(m):
+            yield m
+
+class FreezedBnModel(nn.Module):
+    def __init__(self, model, is_train=True):
+        super(FreezedBnModel, self).__init__()
+        self.model = model
+        self.bn_layers = list(take_bn_layers(self.model))
+
+
+    def forward(self, x):
+        is_train = self.bn_layers[0].training
+        if is_train:
+            self.set_bn_train_status(is_train=False)
+        predicted = self.model(x)
+        if is_train:
+            self.set_bn_train_status(is_train=True)
+
+        return predicted
+
+    def set_bn_train_status(self, is_train: bool):
+        for layer in self.bn_layers:
+            layer.train(mode=is_train)
+            layer.weight.requires_grad = is_train #TODO: layer.requires_grad = is_train - check is its OK
+            layer.bias.requires_grad = is_train
+
 
 class batch_GAIN_VOC(nn.Module):
     def __init__(self, model, grad_layer, num_classes, pretraining_epochs=1, test_first_before_train=False):
         super(batch_GAIN_VOC, self).__init__()
 
         self.model = model
+
+        self.freezed_bn_model = FreezedBnModel(model)
 
         # print(self.model)
         self.grad_layer = grad_layer
@@ -127,7 +160,7 @@ class batch_GAIN_VOC(nn.Module):
         # for param in self.model.parameters():
         # param.requires_grad = False
 
-        logits_am = self.model(masked_image)
+        logits_am = self.freezed_bn_model(masked_image)
 
         # for param in self.model.parameters():
         # param.requires_grad = True

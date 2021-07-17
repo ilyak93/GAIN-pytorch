@@ -499,6 +499,7 @@ parser.add_argument('--test_before_train', type=int, default=0, help='test befor
 parser.add_argument('--batch_pos_dist', type=float, help='positive relative amount in a batch', default=0.25)
 parser.add_argument('--fill_color', type=list, help='fill color of masked area in AM training', default=[0.4948,0.3301,0.16])
 parser.add_argument('--grad_layer', help='path to the input idr', type=str, default='features')
+parser.add_argument('--grad_magnitude', help='grad magnitude of second path', type=int, default=1)
 parser.add_argument('--cl_weight', default=1, type=int, help='classification loss weight')
 parser.add_argument('--am_weight', default=1, type=int, help='attention-mining loss weight')
 parser.add_argument('--ex_weight', default=1, type=int, help='extra-supervision loss weight')
@@ -552,7 +553,8 @@ def main(args):
                          am_pretraining_epochs=args.nepoch_am,
                          ex_pretraining_epochs=args.nepoch_ex,
                          fill_color=fill_color,
-                         test_first_before_train=test_first_before_train)
+                         test_first_before_train=test_first_before_train,
+                         grad_magnitude=args.grad_magnitude)
 
     chkpnt_epoch = 0
 

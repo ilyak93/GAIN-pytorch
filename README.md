@@ -36,7 +36,7 @@ All you need to do to run the algorithm is the following command
 $ python --batchsize=20 --total_epochs=50 --nepoch=6000 --nepoch_am=100 --nepoch_ex=1 \
          --masks_to_use=1 --lr=0.0001 --pos_to_write_train=50 --neg_to_write_train=20 \
 		 --pos_to_write_test=50 --neg_to_write_test=50 --log_name=ex_1_all --cl_weight=1 \
-		 --am_weight=1 --ex_weight=1 ----am_on_all=1 --test_before_train=0 \
+		 --am_weight=1 --ex_weight=1 ----am_on_all=1 --grad_magnitude=1 --test_before_train=0 \
 		 --batch_pos_dist=0.25 --input_dir=C:/MDT_dataset/SB3_ulcers_mined_roi_mult/ \ 
 		 --output_dir=./ --checkpoint_name=ex_1_all
 ```
@@ -59,6 +59,7 @@ $ python --batchsize=20 --total_epochs=50 --nepoch=6000 --nepoch_am=100 --nepoch
 --am_weight: weight of attention-mining loss  
 --ex_weight: weight of extra-supervision loss 
 --am_on_all: train the attention-mining loss on the positives images only or on all the images.
+--grad_magnitude: usse to decrease the gradients magnitude of the second path of am loss gadients path
  
  For debug you can put all the files into your IDE in a new project and run this script defining the arguments<br/>
  or run directly the main script will all the arguments embedded and changing them manually and not as arguments to main.<br/>

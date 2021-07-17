@@ -17,7 +17,7 @@ import copy
 from torchvision.transforms import Resize, Normalize, ToTensor
 
 from dataloaders import data
-from dataloaders.MedTData import MedT_Loader
+from dataloaders.MedTData2 import MedT_Loader
 from metrics.metrics import calc_sensitivity
 
 from models.batch_GAIN_MedT import batch_GAIN_MedT
@@ -68,6 +68,8 @@ def monitor_test_epoch(writer, test_dataset, args, pos_count, test_differences,
     all_sens, auc = calc_sensitivity(test_labels.cpu().numpy(), test_differences)
     writer.add_scalar('ROC/test/ROC_0.1', all_sens[0], epoch)
     writer.add_scalar('ROC/test/ROC_0.05', all_sens[1], epoch)
+    writer.add_scalar('ROC/test/ROC_0.3', all_sens[2], epoch)
+    writer.add_scalar('ROC/test/ROC_0.5', all_sens[3], epoch)
     writer.add_scalar('ROC/test/AUC', auc, epoch)
 
 def monitor_test_viz(j, t, heatmaps, sample, masked_images, test_dataset,
@@ -206,6 +208,8 @@ def monitor_train_epoch(writer, count_pos, count_neg, epoch, am_count,
         all_sens, auc = calc_sensitivity(train_labels, train_differences)
         writer.add_scalar('ROC/train/ROC_0.1', all_sens[0], epoch)
         writer.add_scalar('ROC/train/ROC_0.05', all_sens[1], epoch)
+        writer.add_scalar('ROC/train/ROC_0.3', all_sens[2], epoch)
+        writer.add_scalar('ROC/train/ROC_0.5', all_sens[3], epoch)
         writer.add_scalar('ROC/train/AUC', auc, epoch)
 
 
@@ -489,6 +493,7 @@ parser.add_argument('--pos_to_write_train', type=int, help='train positive sampl
 parser.add_argument('--neg_to_write_train', type=int, help='train negative samples visualizations to monitor in tb', default=20)
 parser.add_argument('--pos_to_write_test', type=int, help='test positive samples visualizations to monitor in tb', default=50)
 parser.add_argument('--neg_to_write_test', type=int, help='test negative samples visualizations to monitor in tb', default=20)
+parser.add_argument('--write_every', type=int, help='how often write to tensorboard numeric measurement', default=100)
 parser.add_argument('--log_name', type=str, help='identifying name for storing tensorboard logs')
 parser.add_argument('--test_before_train', type=int, default=0, help='test before train epoch')
 parser.add_argument('--batch_pos_dist', type=float, help='positive relative amount in a batch', default=0.25)

@@ -62,10 +62,9 @@ class batch_GAIN_MedT(nn.Module):
         self._register_hooks(grad_layer)
 
         # sigma, omega for making the soft-mask
-        self.sigma = 0.7
+        self.sigma = 0.6
         self.omega = 30
-        
-        self.grad_magnitude=1
+        self.grad_magnitude = grad_magnitude
 
         self.am_pretraining_epochs = am_pretraining_epochs
         self.ex_pretraining_epochs = ex_pretraining_epochs

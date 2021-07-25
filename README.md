@@ -104,7 +104,7 @@ Attention Maps visualizations descreptions & additional info:
 
 ### For more: ###
 
-See the usecase which will be uploaded soon.
+See the use-case.
 
 ## Use case in a Project ##
-Link will be uploaded soon.
+Link : <a href="https://www.cs.technion.ac.il/~cs234313/projects_sites/S21/07/site/">Using GAIN to improve endoscopy classification results with localization</a>

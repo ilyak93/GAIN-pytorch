@@ -30,10 +30,12 @@ Ensure on PyTorch & NVdidia websites you have the appropriate CUDA drivers and C
 
 ## Run the script ##
 
+(to run it with VOC dataset see the last section)
+
 All you need to do to run the algorithm is the following command
 
 ```
-$ python --batchsize=20 --total_epochs=50 --nepoch=6000 --nepoch_am=100 --nepoch_ex=1 \
+$ python main_GAIN_MedT.py --batchsize=20 --total_epochs=50 --nepoch=6000 --nepoch_am=100 --nepoch_ex=1 \
          --masks_to_use=1 --lr=0.0001 --pos_to_write_train=50 --neg_to_write_train=20 \
 		 --pos_to_write_test=50 --neg_to_write_test=50 --log_name=ex_1_all --cl_weight=1 \
 		 --am_weight=1 --ex_weight=1 ----am_on_all=1 --grad_magnitude=1 --test_before_train=0 \

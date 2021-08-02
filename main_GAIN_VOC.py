@@ -15,7 +15,7 @@ from dataloaders.MedTData import MedT_Loader
 from metrics.metrics import calc_sensitivity
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm
 
-from models.batch_GAIN_v2 import batch_GAIN_v2
+from models.batch_GAIN_VOC import batch_GAIN_VOC
 from PIL import Image
 
 from torch.utils.tensorboard import SummaryWriter

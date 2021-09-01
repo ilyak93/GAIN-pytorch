@@ -91,7 +91,7 @@ def main():
 
 
 
-        for epoch in range(chkpnt_epoch, epochs):
+    for epoch in range(chkpnt_epoch, epochs):
 
         total_train_single_accuracy = 0
         total_test_single_accuracy = 0

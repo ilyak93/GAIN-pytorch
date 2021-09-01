@@ -84,7 +84,7 @@ def main():
     # chkpnt_epoch = checkpoint['epoch']+1
 
     writer = SummaryWriter(
-        "/content/drive/MyDrive/VOC-dataset/VOC-logs" + "/VOC_multibatch_multiheatmaps_GAIN_singlebatch" +
+        "/content/logs" + "/VOC_multibatch_multiheatmaps_GAIN_singlebatch" +
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     i=0
     num_train_samples = 0

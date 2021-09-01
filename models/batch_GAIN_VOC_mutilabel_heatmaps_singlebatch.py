@@ -26,7 +26,7 @@ class FreezedBnModel(nn.Module):
 
 
     def forward(self, x):
-        is_train = self.bn_layers[0].training
+        is_train = len(self.bn_layers) and self.bn_layers[0].training
         if is_train:
             self.set_bn_train_status(is_train=False)
         predicted = self.model(x)

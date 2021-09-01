@@ -17,6 +17,7 @@ def take_bn_layers(model):
     for m in model.modules():
         if is_bn(m):
             yield m
+	return []
 
 class FreezedBnModel(nn.Module):
     def __init__(self, model, is_train=True):
@@ -26,7 +27,7 @@ class FreezedBnModel(nn.Module):
 
 
     def forward(self, x):
-		print(self.bn_layers)
+		print(len(self.bn_layers))
         is_train = len(self.bn_layers) > 0 and self.bn_layers[0].training
         if is_train:
             self.set_bn_train_status(is_train=False)

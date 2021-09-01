@@ -73,7 +73,7 @@ def main():
 
     epochs = 100
     loss_fn = torch.nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
     gain = batch_GAIN_VOC_multiheatmaps(model=model, grad_layer='features', num_classes=num_classes, pretraining_epochs=1,
                 test_first_before_train=test_first_before_train)
 

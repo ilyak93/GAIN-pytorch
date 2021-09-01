@@ -56,7 +56,7 @@ def main():
 
     batch_size = 1
     epoch_size = 12000
-    dataset_path = 'F:/VOC-dataset'
+    dataset_path = '/content/drive/MyDrive/VOC-dataset'
     input_dims = [224, 224]
     batch_size_dict = {'train': batch_size, 'test': batch_size}
     rds = data.RawDataset(root_dir=dataset_path,

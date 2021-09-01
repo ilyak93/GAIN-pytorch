@@ -66,7 +66,7 @@ def main():
 
 
 
-    test_first_before_train = True
+    test_first_before_train = False
 
     cl_factor = 1
     am_factor = 1

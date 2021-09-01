@@ -7,6 +7,9 @@ import torch.nn.functional as F
 
 from utils.image import denorm
 
+device_name = 'cpu' # cuda:0
+device = torch.device(device_name)
+
 def is_bn(m):
     return isinstance(m, nn.modules.batchnorm.BatchNorm2d) | isinstance(m, nn.modules.batchnorm.BatchNorm1d)
 
@@ -39,9 +42,9 @@ class FreezedBnModel(nn.Module):
             layer.bias.requires_grad = is_train
 
 
-class batch_GAIN_VOC(nn.Module):
+class batch_GAIN_VOC_multiheatmaps(nn.Module):
     def __init__(self, model, grad_layer, num_classes, pretraining_epochs=1, test_first_before_train=False):
-        super(batch_GAIN_VOC, self).__init__()
+        super(batch_GAIN_VOC_multiheatmaps, self).__init__()
 
         self.model = model
 
@@ -134,38 +137,55 @@ class batch_GAIN_VOC(nn.Module):
                     labels_ohe = labels
 
             # gradient = logits * labels_ohe
-            grad_logits = (logits_cl * labels_ohe).sum(dim=1)  # BS x num_classes
-            grad_logits.backward(retain_graph=True, gradient=torch.ones_like(grad_logits))
-            self.model.zero_grad()
+            logits_am_list = []
+            heatmap_list = []
+            masked_images_list = []
+            masks_list = []
+            idx = labels[0].nonzero()
+            for i in range(labels[0].sum().int()):
+                label_ohe = torch.zeros_like(labels[0])
+                label_ohe[idx[i]] = 1
 
-        backward_features = self.backward_features  # BS x C x H x W
-        fl = self.feed_forward_features  # BS x C x H x W
-        weights = F.adaptive_avg_pool2d(backward_features, 1)
-        Ac = torch.mul(fl, weights).sum(dim=1, keepdim=True)
-        Ac = F.relu(Ac)
-        # Ac = F.interpolate(Ac, size=images.size()[2:], mode='bilinear', align_corners=False)
-        Ac = F.upsample_bilinear(Ac, size=images.size()[2:])
-        heatmap = Ac
+                grad_logits = (logits_cl * label_ohe).sum(dim=1)  # BS x num_classes
+                grad_logits.backward(retain_graph=True)
+                self.model.zero_grad()
 
-        Ac_min, _ = Ac.view(len(images), -1).min(dim=1)
-        Ac_max, _ = Ac.view(len(images), -1).max(dim=1)
-        import sys
-        eps = torch.tensor(sys.float_info.epsilon).cuda()
-        scaled_ac = (Ac - Ac_min.view(-1, 1, 1, 1)) / \
-                    (Ac_max.view(-1, 1, 1, 1) - Ac_min.view(-1, 1, 1, 1)
-                     + eps.view(1, 1, 1, 1))
-        mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
-        masked_image = images - images * mask
+                backward_features = self.backward_features  # BS x C x H x W
+                fl = self.feed_forward_features  # BS x C x H x W
+                weights = F.adaptive_avg_pool2d(backward_features, 1)
+                Ac = torch.mul(fl, weights).sum(dim=1, keepdim=True)
+                Ac = F.relu(Ac)
+                # Ac = F.interpolate(Ac, size=images.size()[2:], mode='bilinear', align_corners=False)
+                Ac = F.upsample_bilinear(Ac, size=images.size()[2:])
+                heatmap = Ac
 
-        # for param in self.model.parameters():
-        # param.requires_grad = False
+                Ac_min, _ = Ac.view(len(images), -1).min(dim=1)
+                Ac_max, _ = Ac.view(len(images), -1).max(dim=1)
+                import sys
+                eps = torch.tensor(sys.float_info.epsilon).to(device)
+                scaled_ac = (Ac - Ac_min.view(-1, 1, 1, 1)) / \
+                            (Ac_max.view(-1, 1, 1, 1) - Ac_min.view(-1, 1, 1, 1)
+                             + eps.view(1, 1, 1, 1))
+                mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
+                masked_image = images - images * mask
 
-        logits_am = self.freezed_bn_model(masked_image)
+                # for param in self.model.parameters():
+                # param.requires_grad = False
 
-        # for param in self.model.parameters():
-        # param.requires_grad = True
+                logits_am = self.freezed_bn_model(masked_image)
 
-        return logits_cl, logits_am, heatmap, masked_image, mask
+                # for param in self.model.parameters():
+                # param.requires_grad = True
+                logits_am_list.append(logits_am)
+                heatmap_list.append(heatmap)
+                masked_images_list.append(masked_image)
+                masks_list.append(mask)
+
+
+
+
+
+        return logits_cl, logits_am_list, heatmap_list, masked_images_list, masks_list
 
     def increase_epoch_count(self):
         self.cur_epoch += 1

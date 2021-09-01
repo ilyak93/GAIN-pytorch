@@ -7,7 +7,7 @@ import torch.nn.functional as F
 
 from utils.image import denorm
 
-device_name = 'cpu' # cuda:0
+device_name = 'cuda:0' # cuda:0
 device = torch.device(device_name)
 
 def is_bn(m):

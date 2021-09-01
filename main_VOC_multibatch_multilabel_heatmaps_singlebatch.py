@@ -37,7 +37,7 @@ def main():
     ]
 
     num_classes = len(categories)
-    device_name = 'cpu' # cuda:0
+    device_name = 'cuda:0' # cuda:0
     device = torch.device(device_name)
     model = mobilenet_v2(pretrained=True).train().to(device)
 

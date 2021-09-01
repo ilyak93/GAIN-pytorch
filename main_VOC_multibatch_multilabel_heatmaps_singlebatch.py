@@ -1,6 +1,9 @@
 import PIL.Image
 import pathlib
 
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+
 import argparse
 import torch
 import torchvision
@@ -15,7 +18,7 @@ from sys import maxsize as maxint
 from dataloaders import data
 from dataloaders.MedTData import MedT_Loader
 from metrics.metrics import calc_sensitivity
-from models.batch_GAIN_VOC_mutilabel_heatmaps import batch_GAIN_VOC_multiheatmaps
+from models.batch_GAIN_VOC_mutilabel_heatmaps_singlebatch import batch_GAIN_VOC_multiheatmaps
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm
 
 from models.batch_GAIN_VOC import batch_GAIN_VOC
@@ -34,7 +37,8 @@ def main():
     ]
 
     num_classes = len(categories)
-    device = torch.device('cuda:0')
+    device_name = 'cpu' # cuda:0
+    device = torch.device(device_name)
     model = mobilenet_v2(pretrained=True).train().to(device)
 
 
@@ -50,9 +54,9 @@ def main():
     mean = [0.485, 0.456, 0.406]
     std = [0.229, 0.224, 0.225]
 
-    batch_size = 4
+    batch_size = 1
     epoch_size = 12000
-    dataset_path = 'C:/VOC-dataset'
+    dataset_path = 'F:/VOC-dataset'
     input_dims = [224, 224]
     batch_size_dict = {'train': batch_size, 'test': batch_size}
     rds = data.RawDataset(root_dir=dataset_path,
@@ -70,8 +74,8 @@ def main():
     epochs = 100
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-    gain = batch_GAIN_VOC_multiheatmaps(model=model, grad_layer='features', num_classes=num_classes, pretraining_epochs=10,
-                test_first_before_train=test_first_before_train, batchsize=batch_size)
+    gain = batch_GAIN_VOC_multiheatmaps(model=model, grad_layer='features', num_classes=num_classes, pretraining_epochs=5,
+                test_first_before_train=test_first_before_train)
 
     chkpnt_epoch = 0
     # checkpoint = torch.load('C:/Users/Student1/PycharmProjects/GCAM/checkpoints/4-epoch-chkpnt')
@@ -80,7 +84,7 @@ def main():
     # chkpnt_epoch = checkpoint['epoch']+1
 
     writer = SummaryWriter(
-        "C:/Users/Student1/PycharmProjects/GCAM" + "/VOC_multibatch_multiheatmaps_GAIN" +
+        "F:/PycharmProjects/GAIN" + "/VOC_multibatch_multiheatmaps_GAIN_singlebatch" +
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     i=0
     num_train_samples = 0
@@ -102,9 +106,9 @@ def main():
         if not test_first_before_train or (test_first_before_train and epoch != 0):
 
             total_train_single_accuracy = 0
-            total_train_multi_accuracy = 0
+
             total_test_single_accuracy = 0
-            total_test_multi_accuracy = 0
+
 
             epoch_train_am_loss = 0
             epoch_train_cl_loss = 0
@@ -131,21 +135,22 @@ def main():
 
                 cl_loss = loss_fn(logits_cl, class_onehot)
 
-                am_scores = nn.Softmax(dim=1)(logits_am)
                 batch_am_lables = []
                 batch_am_labels_scores = []
-                for k in range(len(batch)):
-                    num_of_labels = len(sample[2][k])
-                    _, am_labels = am_scores[k].topk(num_of_labels)
+                for k in range(len(labels[0])):
+                    am_scores = nn.Softmax(dim=1)(logits_am[k])
+                    _, am_labels = am_scores.topk(1)
                     batch_am_lables.append(am_labels)
-                    am_labels_scores = am_scores[k].view(-1)[labels[k]].sum() / num_of_labels
+                    am_labels_scores = am_scores.view(-1)[labels[0][k]]
                     batch_am_labels_scores.append(am_labels_scores)
-                am_loss = sum(batch_am_labels_scores) / batch_size
+
+                num_of_labels = len(sample[2][0])
+                am_loss = sum(batch_am_labels_scores) #/ num_of_labels
 
                 # g = make_dot(am_loss, dict(gain.named_parameters()), show_attrs = True, show_saved = True)
                 # g.save('grad_viz', train_path)
 
-                total_loss = cl_loss * cl_factor + am_loss * am_factor
+                total_loss = num_of_labels * cl_loss * cl_factor + am_loss * am_factor
 
                 epoch_train_am_loss += (am_loss * am_factor).detach().cpu().item()
                 epoch_train_cl_loss += (cl_loss * cl_factor).detach().cpu().item()
@@ -155,9 +160,9 @@ def main():
                 writer.add_scalar('Per_Step/train/am_loss', (am_loss * am_factor).detach().cpu().item(), i)
                 writer.add_scalar('Per_Step/train/total_loss', total_loss.detach().cpu().item(), i)
 
-                loss = cl_loss
+                loss = num_of_labels * cl_loss * cl_factor
                 if gain.AM_enabled():
-                    loss = total_loss
+                    loss += am_loss * am_factor
                 loss.backward()
                 optimizer.step()
 

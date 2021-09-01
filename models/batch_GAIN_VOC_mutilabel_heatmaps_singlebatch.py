@@ -65,7 +65,7 @@ class batch_GAIN_VOC_multiheatmaps(nn.Module):
         self._register_hooks(grad_layer)
 
         # sigma, omega for making the soft-mask
-        self.sigma = 0.25
+        self.sigma = 0.5
         self.omega = 10
 
         self.pretraining_epochs = pretraining_epochs
@@ -130,7 +130,7 @@ class batch_GAIN_VOC_multiheatmaps(nn.Module):
 
             if not is_train:
                 pred = F.softmax(logits_cl).argmax(dim=1)
-                labels_ohe = self._to_ohe_multibatch(pred).cuda()
+                labels_ohe = self._to_ohe_multibatch(pred).to(device)
             else:
                 if type(labels) is tuple or type(labels) is list:
                     labels_ohe = torch.stack(labels)
@@ -142,9 +142,9 @@ class batch_GAIN_VOC_multiheatmaps(nn.Module):
             heatmap_list = []
             masked_images_list = []
             masks_list = []
-            idx = labels[0].nonzero()
-            for i in range(labels[0].sum().int()):
-                label_ohe = torch.zeros_like(labels[0])
+            idx = labels_ohe[0].nonzero()
+            for i in range(labels_ohe[0].sum().int()):
+                label_ohe = torch.zeros_like(labels_ohe[0])
                 label_ohe[idx[i]] = 1
 
                 grad_logits = (logits_cl * label_ohe).sum(dim=1)  # BS x num_classes
@@ -181,10 +181,6 @@ class batch_GAIN_VOC_multiheatmaps(nn.Module):
                 heatmap_list.append(heatmap)
                 masked_images_list.append(masked_image)
                 masks_list.append(mask)
-
-
-
-
 
         return logits_cl, logits_am_list, heatmap_list, masked_images_list, masks_list
 

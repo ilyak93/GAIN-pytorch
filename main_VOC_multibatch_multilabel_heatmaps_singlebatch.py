@@ -91,9 +91,7 @@ def main():
 
 
 
-    for epoch in range(chkpnt_epoch, epochs):
-
-        
+        for epoch in range(chkpnt_epoch, epochs):
 
         total_train_single_accuracy = 0
         total_test_single_accuracy = 0
@@ -101,6 +99,7 @@ def main():
         epoch_train_cl_loss = 0
 
         model.train(True)
+
 
         if not test_first_before_train or (test_first_before_train and epoch != 0):
 
@@ -126,19 +125,17 @@ def main():
                 optimizer.zero_grad()
 
                 labels = sample[2]
-                
+
+
                 logits_cl, logits_am, heatmap, masked_image, mask = gain(batch, sample[1])
 
                 class_onehot = torch.stack(sample[1]).float()
 
                 cl_loss = loss_fn(logits_cl, class_onehot)
 
-                batch_am_lables = []
                 batch_am_labels_scores = []
                 for k in range(len(labels[0])):
                     am_scores = nn.Softmax(dim=1)(logits_am[k])
-                    _, am_labels = am_scores.topk(1)
-                    batch_am_lables.append(am_labels)
                     am_labels_scores = am_scores.view(-1)[labels[0][k]]
                     batch_am_labels_scores.append(am_labels_scores)
 
@@ -165,21 +162,19 @@ def main():
                 optimizer.step()
 
                 #Accuracy evaluation
-                for k in range(len(batch)):
-                    num_of_labels = len(sample[2][k])
-                    _, y_pred = logits_cl[k].detach().topk(k=num_of_labels)
-                    y_pred = y_pred.view(-1)
-                    gt = torch.tensor(sorted(sample[2][k]), device=device)
+                num_of_labels = len(sample[2][0])
+                _, y_pred = logits_cl[0].detach().topk(k=num_of_labels)
+                y_pred = y_pred.view(-1).tolist()
+                gt = sample[2][0]
+                acc = len(set(y_pred).intersection(set(gt))) / num_of_labels
+                total_train_single_accuracy += acc
 
-                    acc = (y_pred == gt).sum()
-                    total_train_single_accuracy += acc.detach().cpu()
-
-                if i % 100 == 0:
-                    for t in range(len(batch)):
-                        num_of_labels = len(sample[2][t])
+                if i % 1 == 0:
+                    num_of_labels = len(sample[2][0])
+                    for t in range(num_of_labels):
                         one_heatmap = heatmap[t].squeeze().cpu().detach().numpy()
 
-                        one_augmented_im = torch.tensor(np.array(augmented_batch[t])).to(device).unsqueeze(0)
+                        one_augmented_im = torch.tensor(np.array(augmented_batch[0])).to(device).unsqueeze(0)
                         one_masked_image = masked_image[t].detach().squeeze()
                         htm = deprocess_image(one_heatmap)
                         visualization, red_htm = show_cam_on_image(one_augmented_im.cpu().detach().numpy(), htm, True)
@@ -197,28 +192,29 @@ def main():
                         #plt.imshow(masked_im)
                         #plt.show()
                         #plt.close()
-                        orig = sample[0][t].unsqueeze(0)
+                        orig = sample[0][0].unsqueeze(0)
                         masked_im = torch.from_numpy(masked_im).unsqueeze(0).to(device)
                         orig_viz = torch.cat((orig, one_augmented_im, viz, masked_im), 0)
                         grid = torchvision.utils.make_grid(orig_viz.permute([0, 3, 1, 2]))
-                        gt = [categories[x] for x in labels[t]]
+                        gt = [categories[x] for x in labels[0]]
                         writer.add_image(tag='Train_Heatmaps/image_' + str(i) +
                                              '_' + str(t) + '_'  +'_'.join(gt),
                                          img_tensor=grid, global_step=epoch,
                                          dataformats='CHW')
-                        y_scores = nn.Softmax()(logits_cl[t].detach())
+                        y_scores = nn.Softmax()(logits_cl[0].detach())
                         _, predicted_categories = y_scores.topk(num_of_labels)
                         predicted_cl = [(categories[x], format(y_scores.view(-1)[x], '.4f')) for x in
                                         predicted_categories.view(-1)]
-                        labels_cl = [(categories[x], format(y_scores.view(-1)[x], '.4f')) for x in labels[t]]
+                        labels_cl = [(categories[x], format(y_scores.view(-1)[x], '.4f')) for x in labels[0]]
                         import itertools
                         predicted_cl = list(itertools.chain(*predicted_cl))
                         labels_cl = list(itertools.chain(*labels_cl))
                         cl_text = 'cl_gt_' + '_'.join(labels_cl) + '_pred_' + '_'.join(predicted_cl)
-
-                        predicted_am = [(categories[x], format(am_scores[t].view(-1)[x], '.4f')) for x in
-                                        batch_am_lables[t].view(-1)]
-                        labels_am = [(categories[x], format(am_scores.view(-1)[x], '.4f')) for x in labels[t]]
+                        am_scores = nn.Softmax(dim=1)(logits_am[t])
+                        _, am_labels = am_scores.topk(num_of_labels)
+                        predicted_am = [(categories[x], format(am_scores.view(-1)[x], '.4f')) for x in
+                                        am_labels.tolist()[0]]
+                        labels_am = [(categories[x], format(am_scores.view(-1)[x], '.4f')) for x in labels[0]]
                         import itertools
                         predicted_am = list(itertools.chain(*predicted_am))
                         labels_am = list(itertools.chain(*labels_am))
@@ -226,7 +222,7 @@ def main():
 
                         writer.add_text('Train_Heatmaps_Description/image_' + str(i) + '_' + str(t) + '_' +
                                         '_'.join(gt), cl_text + am_text, global_step=epoch)
-                    
+
                 i += 1
 
                 if epoch == 0 and test_first_before_train == False:
@@ -253,43 +249,43 @@ def main():
 
             logits_cl, logits_am, heatmap, masked_image, mask = gain(batch, sample[1])
 
-            am_scores = nn.Softmax(dim=1)(logits_am)
-            batch_am_lables = []
-            for k in range(len(batch)):
-                num_of_labels = len(sample[2][k])
-                _, am_labels = am_scores[k].topk(num_of_labels)
-                batch_am_lables.append(am_labels)
-
+            num_of_labels = len(sample[2][0])
 
             # Single label evaluation
-            for k in range(len(batch)):
-                num_of_labels = len(sample[2][k])
-                _, y_pred = logits_cl[k].detach().topk(k=num_of_labels)
-                y_pred = y_pred.view(-1)
-                gt = torch.tensor(sorted(sample[2][k]), device=device)
+            _, y_pred = logits_cl.detach().topk(k=num_of_labels)
+            y_pred = y_pred.view(-1).tolist()
+            gt = sample[2][0]
+            acc = len(set(y_pred).intersection(set(gt))) / num_of_labels
+            total_test_single_accuracy += acc
 
-                acc = (y_pred == gt).sum()
-                total_test_single_accuracy += acc.detach().cpu()
-
-            if j % 10 == 0:
-                num_of_labels = len(sample[2][0])
+            if j % 100 == 0:
                 one_heatmap = heatmap[0].squeeze().cpu().detach().numpy()
                 one_input_image = sample[0][0].cpu().detach().numpy()
                 one_masked_image = masked_image[0].detach().squeeze()
                 htm = deprocess_image(one_heatmap)
                 visualization, heatmap = show_cam_on_image(one_input_image, htm, True)
+                # plt.imshow(red_htm)
+                # plt.show()
+                # plt.close()
+                # plt.imshow(visualization[0])
+                # plt.show()
+                # plt.close()
                 viz = torch.from_numpy(visualization).unsqueeze(0).to(device)
                 augmented = torch.tensor(one_input_image).unsqueeze(0).to(device)
-                masked_image = denorm(one_masked_image, mean, std)
-                masked_image = (
-                        masked_image.squeeze().permute([1, 2, 0]).cpu().detach().numpy() * 255).round().astype(
-                    np.uint8)
+                masked_im = denorm(one_masked_image, mean, std)
+                masked_im = (masked_im.squeeze().permute([1, 2, 0])
+                             .cpu().detach().numpy() * 255).round() \
+                    .astype(np.uint8)
+                # plt.imshow(masked_im)
+                # plt.show()
+                # plt.close()
                 orig = sample[0][0].unsqueeze(0)
-                masked_image = torch.from_numpy(masked_image).unsqueeze(0).to(device)
-                orig_viz = torch.cat((orig, augmented, viz, masked_image), 0)
+                masked_im = torch.from_numpy(masked_im).unsqueeze(0).to(device)
+                orig_viz = torch.cat((orig, augmented, viz, masked_im), 0)
                 grid = torchvision.utils.make_grid(orig_viz.permute([0, 3, 1, 2]))
                 gt = [categories[x] for x in labels[0]]
-                writer.add_image(tag='Test_Heatmaps/image_' + str(j) + '_' + '_'.join(gt),
+                writer.add_image(tag='Test_Heatmaps/image_' + str(j) +
+                                     '_' + str(0) + '_' + '_'.join(gt),
                                  img_tensor=grid, global_step=epoch,
                                  dataformats='CHW')
                 y_scores = nn.Softmax()(logits_cl[0].detach())
@@ -301,17 +297,18 @@ def main():
                 predicted_cl = list(itertools.chain(*predicted_cl))
                 labels_cl = list(itertools.chain(*labels_cl))
                 cl_text = 'cl_gt_' + '_'.join(labels_cl) + '_pred_' + '_'.join(predicted_cl)
-
-                predicted_am = [(categories[x], format(am_scores[0].view(-1)[x], '.4f')) for x in
-                                batch_am_lables[0].view(-1)]
+                am_scores = nn.Softmax(dim=1)(logits_am[0])
+                _, am_labels = am_scores.topk(num_of_labels)
+                predicted_am = [(categories[x], format(am_scores.view(-1)[x], '.4f')) for x in
+                                am_labels.tolist()[0]]
                 labels_am = [(categories[x], format(am_scores.view(-1)[x], '.4f')) for x in labels[0]]
                 import itertools
                 predicted_am = list(itertools.chain(*predicted_am))
                 labels_am = list(itertools.chain(*labels_am))
                 am_text = '_am_gt_' + '_'.join(labels_am) + '_pred_' + '_'.join(predicted_am)
 
-                writer.add_text('Test_Heatmaps_Description/image_' + str(j) + '_' + '_'.join(gt),
-                                cl_text + am_text, global_step=epoch)
+                writer.add_text('Test_Heatmaps_Description/image_' + str(j) + '_' + str(0) + '_' +
+                                '_'.join(gt), cl_text + am_text, global_step=epoch)
 
 
 

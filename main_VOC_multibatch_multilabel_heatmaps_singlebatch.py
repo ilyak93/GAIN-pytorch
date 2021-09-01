@@ -39,7 +39,7 @@ def main():
     num_classes = len(categories)
     device_name = 'cuda:0' # cuda:0
     device = torch.device(device_name)
-    model = mobilenet_v2(pretrained=True).train().to(device)
+    model = vgg19(pretrained=True).train().to(device)
 
 
     # change the last layer for finetuning
@@ -93,7 +93,7 @@ def main():
 
     for epoch in range(chkpnt_epoch, epochs):
 
-        train_viz = 0
+        
 
         total_train_single_accuracy = 0
         total_test_single_accuracy = 0
@@ -174,7 +174,7 @@ def main():
                     acc = (y_pred == gt).sum()
                     total_train_single_accuracy += acc.detach().cpu()
 
-                if train_viz < 2:
+                if i % 100 == 0:
                     for t in range(len(batch)):
                         num_of_labels = len(sample[2][t])
                         one_heatmap = heatmap[t].squeeze().cpu().detach().numpy()
@@ -226,7 +226,7 @@ def main():
 
                         writer.add_text('Train_Heatmaps_Description/image_' + str(i) + '_' + str(t) + '_' +
                                         '_'.join(gt), cl_text + am_text, global_step=epoch)
-                    train_viz += 1
+                    
                 i += 1
 
                 if epoch == 0 and test_first_before_train == False:

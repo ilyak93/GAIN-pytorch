@@ -101,8 +101,6 @@ def main():
         epoch_train_cl_loss = 0
 
         model.train(True)
-        
-        print('started')
 
         if not test_first_before_train or (test_first_before_train and epoch != 0):
 
@@ -129,9 +127,6 @@ def main():
 
                 labels = sample[2]
                 
-                print('first forward')
-
-
                 logits_cl, logits_am, heatmap, masked_image, mask = gain(batch, sample[1])
 
                 class_onehot = torch.stack(sample[1]).float()

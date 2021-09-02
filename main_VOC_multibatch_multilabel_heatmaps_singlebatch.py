@@ -327,6 +327,8 @@ def main():
 
 
         writer.add_scalar('Accuracy/test/cl_accuracy', total_test_single_accuracy / num_test_samples, epoch)
+		
+		gain.increase_epoch_count()
 
 
 

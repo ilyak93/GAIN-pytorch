@@ -55,7 +55,7 @@ def main():
     std = [0.229, 0.224, 0.225]
 
     batch_size = 1
-    epoch_size = 12000
+    epoch_size = 1000000
     dataset_path = '/content/drive/MyDrive/VOC-dataset'
     input_dims = [224, 224]
     batch_size_dict = {'train': batch_size, 'test': batch_size}
@@ -169,7 +169,7 @@ def main():
                 acc = len(set(y_pred).intersection(set(gt))) / num_of_labels
                 total_train_single_accuracy += acc
 
-                if i % 1000 == 0:
+                if i % 100 == 0:
                     num_of_labels = len(sample[2][0])
                     for t in range(num_of_labels):
                         one_heatmap = heatmap[t].squeeze().cpu().detach().numpy()

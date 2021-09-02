@@ -169,7 +169,7 @@ def main():
                 acc = len(set(y_pred).intersection(set(gt))) / num_of_labels
                 total_train_single_accuracy += acc
 
-                if i % 100 == 0:
+                if i % 1000 == 0:
                     num_of_labels = len(sample[2][0])
                     for t in range(num_of_labels):
                         one_heatmap = heatmap[t].squeeze().cpu().detach().numpy()
@@ -230,8 +230,8 @@ def main():
                 if epoch == 1 and test_first_before_train == True:
                     num_train_samples += 1
 
-                if i % epoch_size == 0:
-                    break
+                #if i % epoch_size == 0:
+                    #break
 
 
         model.train(False)

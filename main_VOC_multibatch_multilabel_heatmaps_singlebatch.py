@@ -55,7 +55,7 @@ def main():
     std = [0.229, 0.224, 0.225]
 
     batch_size = 1
-    epoch_size = 1000000
+    epoch_size = 12000
     dataset_path = '/content/drive/MyDrive/VOC-dataset'
     input_dims = [224, 224]
     batch_size_dict = {'train': batch_size, 'test': batch_size}

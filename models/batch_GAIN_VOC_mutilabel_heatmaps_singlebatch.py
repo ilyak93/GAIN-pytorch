@@ -171,12 +171,12 @@ class batch_GAIN_VOC_multiheatmaps(nn.Module):
                 masked_image = images - images * mask
 
                 for param in self.model.parameters():
-                param.requires_grad = False
+                    param.requires_grad = False
 
                 logits_am = self.freezed_bn_model(masked_image)
 
                 for param in self.model.parameters():
-                param.requires_grad = True
+                    param.requires_grad = True
                 
                 logits_am_list.append(logits_am)
                 heatmap_list.append(heatmap)

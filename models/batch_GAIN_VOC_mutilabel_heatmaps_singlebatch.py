@@ -65,7 +65,7 @@ class batch_GAIN_VOC_multiheatmaps(nn.Module):
         self._register_hooks(grad_layer)
 
         # sigma, omega for making the soft-mask
-        self.sigma = 0.5
+        self.sigma = 0.25
         self.omega = 10
 
         self.pretraining_epochs = pretraining_epochs

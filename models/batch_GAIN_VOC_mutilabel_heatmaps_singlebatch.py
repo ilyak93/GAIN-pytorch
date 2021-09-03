@@ -177,7 +177,7 @@ class batch_GAIN_VOC_multiheatmaps(nn.Module):
 
                 for param in self.model.parameters():
                 param.requires_grad = True
-				
+                
                 logits_am_list.append(logits_am)
                 heatmap_list.append(heatmap)
                 masked_images_list.append(masked_image)

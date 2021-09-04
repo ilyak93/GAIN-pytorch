@@ -258,7 +258,7 @@ def main():
             acc = len(set(y_pred).intersection(set(gt))) / num_of_labels
             total_test_single_accuracy += acc
 
-            if j % 100 == 0:
+            if j % 50 == 0:
                 one_heatmap = heatmap[0].squeeze().cpu().detach().numpy()
                 one_input_image = sample[0][0].cpu().detach().numpy()
                 one_masked_image = masked_image[0].detach().squeeze()
@@ -315,6 +315,16 @@ def main():
             j += 1
 
         num_test_samples = len(rds.datasets['seq_test'])*batch_size
+        
+        chkpt_path = '/content/drive/MyDrive/logs'
+
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+        }, chkpt_path + '/chkpoint_with_grad_magnitude_001')
+
+        
         print("finished epoch number:")
         print(epoch)
 

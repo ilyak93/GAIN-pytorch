@@ -139,8 +139,8 @@ def preprocess_image(img , train , mean=None, std=None) -> torch.Tensor:
     if train == True:
         augment = Compose([
             Image.fromarray,
-            #torchvision.transforms.AutoAugment(AutoAugmentPolicy.CIFAR10),
-            #RandomHorizontalFlip(),
+            torchvision.transforms.AutoAugment(AutoAugmentPolicy.CIFAR10),
+            RandomHorizontalFlip(),
         ])
         normilize = Compose([
             ToTensor(),

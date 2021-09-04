@@ -72,12 +72,12 @@ class RawDataset:
         random_train_loader = torch.utils.data.DataLoader(
             self.dataset,
             batch_size=self.batch_size['train'],
-            num_workers=num_workers,
+            num_workers=0,
             sampler=random_train_sampler,
             collate_fn=my_collate)
         random_validation_loader = torch.utils.data.DataLoader(
             self.dataset,
-            num_workers=num_workers,
+            num_workers=0,
             batch_size=self.batch_size['test'],
             sampler=random_valid_sampler)
 

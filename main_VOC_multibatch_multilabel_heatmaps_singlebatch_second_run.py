@@ -18,8 +18,8 @@ from sys import maxsize as maxint
 from dataloaders import data
 from dataloaders.MedTData import MedT_Loader
 from metrics.metrics import calc_sensitivity
-from models.batch_GAIN_VOC_mutilabel_heatmaps_singlebatch import batch_GAIN_VOC_multiheatmaps
-from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm
+from models.batch_GAIN_VOC_mutilabel_heatmaps_singlebatch_second_run import batch_GAIN_VOC_multiheatmaps
+from utils.image_second_run import show_cam_on_image, preprocess_image, deprocess_image, denorm
 
 from models.batch_GAIN_VOC import batch_GAIN_VOC
 from PIL import Image
@@ -60,7 +60,7 @@ def main():
     input_dims = [224, 224]
     batch_size_dict = {'train': batch_size, 'test': batch_size}
     rds = data.RawDataset(root_dir=dataset_path,
-                          num_workers=2,
+                          num_workers=0,
                           output_dims=input_dims,
                           batch_size_dict=batch_size_dict)
 
@@ -140,12 +140,12 @@ def main():
                     batch_am_labels_scores.append(am_labels_scores)
 
                 num_of_labels = len(sample[2][0])
-                am_loss = sum(batch_am_labels_scores) #/ num_of_labels
+                am_loss = sum(batch_am_labels_scores) / num_of_labels
 
                 # g = make_dot(am_loss, dict(gain.named_parameters()), show_attrs = True, show_saved = True)
                 # g.save('grad_viz', train_path)
 
-                total_loss = num_of_labels * cl_loss * cl_factor + am_loss * am_factor
+                total_loss = cl_loss * cl_factor + am_loss * am_factor
 
                 epoch_train_am_loss += (am_loss * am_factor).detach().cpu().item()
                 epoch_train_cl_loss += (cl_loss * cl_factor).detach().cpu().item()
@@ -155,7 +155,7 @@ def main():
                 writer.add_scalar('Per_Step/train/am_loss', (am_loss * am_factor).detach().cpu().item(), i)
                 writer.add_scalar('Per_Step/train/total_loss', total_loss.detach().cpu().item(), i)
 
-                loss = num_of_labels * cl_loss * cl_factor
+                loss = cl_loss * cl_factor
                 if gain.AM_enabled():
                     loss += am_loss * am_factor
                 loss.backward()
@@ -169,7 +169,7 @@ def main():
                 acc = len(set(y_pred).intersection(set(gt))) / num_of_labels
                 total_train_single_accuracy += acc
 
-                if i % 1000 == 0:
+                if i % 500 == 0:
                     num_of_labels = len(sample[2][0])
                     for t in range(num_of_labels):
                         one_heatmap = heatmap[t].squeeze().cpu().detach().numpy()
@@ -322,7 +322,7 @@ def main():
             'epoch': epoch,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-        }, chkpt_path + '/chkpoint_with_grad_magnitude_001')
+        }, chkpt_path + '/chkpoint_with_grad_second_run')
 
         
         print("finished epoch number:")

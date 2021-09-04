@@ -84,7 +84,7 @@ def main():
     # chkpnt_epoch = checkpoint['epoch']+1
 
     writer = SummaryWriter(
-        "/content/drive/MyDrive/logs" + "/VOC_multibatch_multiheatmaps_GAIN_singlebatch_grad_magnitude_0.01" +
+        "/content/drive/MyDrive/logs" + "/VOC_multibatch_multiheatmaps_GAIN_singlebatch_with_grad_second_run" +
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     i=0
     num_train_samples = 0

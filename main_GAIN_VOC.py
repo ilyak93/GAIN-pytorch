@@ -46,8 +46,8 @@ def main():
     mean = [0.485, 0.456, 0.406]
     std = [0.229, 0.224, 0.225]
 
-    batch_size = 8
-    epoch_size = 500
+    batch_size = 1
+    epoch_size = 1000000
     dataset_path = 'C:/VOC-dataset'
     input_dims = [224, 224]
     batch_size_dict = {'train': batch_size, 'test': batch_size}
@@ -148,8 +148,12 @@ def main():
                 writer.add_scalar('Per_Step/train/cl_loss', (cl_loss * cl_factor).detach().cpu().item(), i)
                 writer.add_scalar('Per_Step/train/am_loss', (am_loss * am_factor).detach().cpu().item(), i)
                 writer.add_scalar('Per_Step/train/total_loss', total_loss.detach().cpu().item(), i)
+                
+                
+                loss = cl_loss * cl_factor
+                if gain.AM_enabled():
+                    loss += am_loss * am_factor
 
-                loss = cl_loss
                 loss.backward()
                 optimizer.step()
 
@@ -326,6 +330,8 @@ def main():
 
 
         writer.add_scalar('Accuracy/test/cl_accuracy', total_test_single_accuracy / num_test_samples, epoch)
+        
+        gain.increase_epoch_count()
 
 
 

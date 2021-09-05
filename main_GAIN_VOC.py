@@ -48,7 +48,7 @@ def main():
 
     batch_size = 1
     epoch_size = 1000000
-    dataset_path = 'C:/VOC-dataset'
+    dataset_path = '/content/drive/MyDrive/VOC-dataset'
     input_dims = [224, 224]
     batch_size_dict = {'train': batch_size, 'test': batch_size}
     rds = data.RawDataset(root_dir=dataset_path,
@@ -74,7 +74,7 @@ def main():
     # chkpnt_epoch = checkpoint['epoch']+1
 
     writer = SummaryWriter(
-        "C:/Users/Student1/PycharmProjects/GCAM" + "/VOC_multibatch_GAIN_without_resize" +
+        "/content/drive/MyDrive/logs" + "/VOC_multibatch_GAIN" +
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     i=0
     num_train_samples = 0

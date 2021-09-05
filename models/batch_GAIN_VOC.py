@@ -23,7 +23,7 @@ class FreezedBnModel(nn.Module):
 
 
     def forward(self, x):
-        is_train = self.bn_layers[0].training
+        is_train = len(self.bn_layers) > 0 and self.bn_layers[0].training
         if is_train:
             self.set_bn_train_status(is_train=False)
         predicted = self.model(x)
@@ -156,8 +156,8 @@ class batch_GAIN_VOC(nn.Module):
                      + eps.view(1, 1, 1, 1))
         mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
         masked_image = images - images * mask
-		
-		masked_image.register_hook(lambda grad: grad * 1000) #TODO: use this to control gradient magnitude
+        
+        masked_image.register_hook(lambda grad: grad * 1000) #TODO: use this to control gradient magnitude
 
         # for param in self.model.parameters():
         # param.requires_grad = False
@@ -166,8 +166,8 @@ class batch_GAIN_VOC(nn.Module):
 
         # for param in self.model.parameters():
         # param.requires_grad = True
-		
-		masked_image.register_hook(lambda grad: grad / 1000) #TODO: use this to control gradient magnitude
+        
+        masked_image.register_hook(lambda grad: grad / 1000) #TODO: use this to control gradient magnitude
 
         return logits_cl, logits_am, heatmap, masked_image, mask
 

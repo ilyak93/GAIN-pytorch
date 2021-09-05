@@ -170,7 +170,7 @@ class batch_GAIN_VOC_multiheatmaps(nn.Module):
                 mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
                 masked_image = images - images * mask
                 
-                masked_image.register_hook(lambda grad: grad * 0.001) #TODO: use this to control gradient magnitude
+                masked_image.register_hook(lambda grad: grad * 0.00001) #TODO: use this to control gradient magnitude
 
                 #for param in self.model.parameters():
                 #    param.requires_grad = False
@@ -180,7 +180,7 @@ class batch_GAIN_VOC_multiheatmaps(nn.Module):
                 #for param in self.model.parameters():
                 #    param.requires_grad = True
                     
-                logits_am.register_hook(lambda grad: grad / 0.001) #TODO: use this to control gradient magnitude
+                logits_am.register_hook(lambda grad: grad / 0.00001) #TODO: use this to control gradient magnitude
                 
                 logits_am_list.append(logits_am)
                 heatmap_list.append(heatmap)

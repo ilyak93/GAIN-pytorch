@@ -74,7 +74,7 @@ def main():
     epochs = 100
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-    gain = batch_GAIN_VOC_multiheatmaps(model=model, grad_layer='features', num_classes=num_classes, pretraining_epochs=5,
+    gain = batch_GAIN_VOC_multiheatmaps(model=model, grad_layer='features', num_classes=num_classes, pretraining_epochs=1,
                 test_first_before_train=test_first_before_train)
 
     chkpnt_epoch = 0
@@ -84,7 +84,7 @@ def main():
     # chkpnt_epoch = checkpoint['epoch']+1
 
     writer = SummaryWriter(
-        "/content/drive/MyDrive/logs" + "/VOC_multibatch_multiheatmaps_GAIN_singlebatch_grad_magnitude_0.01" +
+        "/content/drive/MyDrive/logs" + "/VOC_multibatch_multiheatmaps_GAIN_singlebatch_grad_magnitude_0.001" +
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
     i=0
     num_train_samples = 0
@@ -320,9 +320,10 @@ def main():
 
         torch.save({
             'epoch': epoch,
+			'iteration' : i,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-        }, chkpt_path + '/chkpoint_with_grad_magnitude_001')
+        }, chkpt_path + '/chkpoint_with_grad_magnitude_0001')
 
         
         print("finished epoch number:")

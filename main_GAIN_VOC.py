@@ -64,7 +64,7 @@ def main():
     epochs = 100
     loss_fn = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.00001)
-    gain = batch_GAIN_VOC(model=model, grad_layer='features', num_classes=20, pretraining_epochs=5,
+    gain = batch_GAIN_VOC(model=model, grad_layer='features', num_classes=20, pretraining_epochs=1,
                 test_first_before_train=test_first_before_train)
 
     chkpnt_epoch = 0

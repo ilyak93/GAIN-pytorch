@@ -174,7 +174,7 @@ def main():
                 #acc_multi = (y_pred_multi == gt).sum() / num_of_labels
                 #total_train_multi_accuracy += acc_multi.detach().cpu()
 
-                if train_viz < 2:
+                if i % 100 == 0:
                     for t in range(len(batch)):
                         num_of_labels = len(sample[2][t])
                         one_heatmap = heatmap[t].squeeze().cpu().detach().numpy()
@@ -271,7 +271,7 @@ def main():
                 acc = (y_pred == gt).sum()
                 total_test_single_accuracy += acc.detach().cpu()
 
-            if j % 10 == 0:
+            if j % 100 == 0:
                 num_of_labels = len(sample[2][0])
                 one_heatmap = heatmap[0].squeeze().cpu().detach().numpy()
                 one_input_image = sample[0][0].cpu().detach().numpy()

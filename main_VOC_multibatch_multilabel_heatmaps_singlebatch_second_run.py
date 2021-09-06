@@ -90,6 +90,9 @@ def main():
         "/content/drive/MyDrive/logs" + "/VOC_multibatch_multiheatmaps_GAIN_singlebatch_with_grad_second_run2021-09-05_16-56-25")
     
     num_train_samples = 0
+    
+    if chkpnt_epoch != 0:
+        num_train_samples = len(rds.datasets['rnd_train'])*batch_size
 
 
 

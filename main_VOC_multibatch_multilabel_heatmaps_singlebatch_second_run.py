@@ -80,11 +80,11 @@ def main():
     i=0
 
     chkpnt_epoch = 0
-    checkpoint = torch.load('/content/drive/MyDrive/logs/chkpoint_with_grad_second_run')
-    model.load_state_dict(checkpoint['model_state_dict'])
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    chkpnt_epoch = checkpoint['epoch'] + 1
-    i = 28740
+    #checkpoint = torch.load('/content/drive/MyDrive/logs/chkpoint_with_grad_second_run')
+    #model.load_state_dict(checkpoint['model_state_dict'])
+    #optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    #chkpnt_epoch = checkpoint['epoch'] + 1
+    #i = 28740
 
     writer = SummaryWriter(
         "/content/drive/MyDrive/logs" + "/VOC_multibatch_multiheatmaps_GAIN_singlebatch_with_grad_second_run2021-09-05_16-56-25")

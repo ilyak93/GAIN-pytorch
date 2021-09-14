@@ -43,7 +43,8 @@ class FreezedBnModel(nn.Module):
 
 
 class batch_GAIN_VOC(nn.Module):
-    def __init__(self, model, grad_layer, num_classes, pretraining_epochs=1, test_first=False):
+    def __init__(self, model, grad_layer, num_classes, pretraining_epochs=1,
+                 test_first=False, grads_off=False, grad_magnitude=1):
         super(batch_GAIN_VOC, self).__init__()
 
         self.model = model
@@ -54,6 +55,11 @@ class batch_GAIN_VOC(nn.Module):
         self.grad_layer = grad_layer
 
         self.num_classes = num_classes
+
+        self.grads_off = grads_off
+        self.grad_magnitude = grad_magnitude
+        if grads_off:
+            self.grad_magnitude = 1
 
         # Feed-forward features
         self.feed_forward_features = None
@@ -160,17 +166,19 @@ class batch_GAIN_VOC(nn.Module):
         mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
         masked_image = images - images * mask
         
-        masked_image.register_hook(lambda grad: grad * 100000) #TODO: use this to control gradient magnitude
+        masked_image.register_hook(lambda grad: grad * self.grad_magnitude)
 
-        # for param in self.model.parameters():
-        # param.requires_grad = False
+        if self.grads_off:
+            for param in self.model.parameters():
+                param.requires_grad = False
 
         logits_am = self.freezed_bn_model(masked_image)
 
-        # for param in self.model.parameters():
-        # param.requires_grad = True
+        if self.grads_off:
+            for param in self.model.parameters():
+                param.requires_grad = True
         
-        masked_image.register_hook(lambda grad: grad / 100000) #TODO: use this to control gradient magnitude
+        masked_image.register_hook(lambda grad: grad / self.grad_magnitude)
 
         return logits_cl, logits_am, heatmap, masked_image, mask
 

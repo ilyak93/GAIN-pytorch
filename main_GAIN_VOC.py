@@ -1,25 +1,19 @@
 import argparse
 
-import PIL.Image
-import pathlib
 import torch
 import torchvision
 from torch import nn
-import torch.nn.functional as F
-from torchvision.models import vgg19, wide_resnet101_2, mobilenet_v2
+
+from torchvision.models import vgg19
 import numpy as np
-import matplotlib.pyplot as plt
-# from torchviz import make_dot
-from sys import maxsize as maxint
+
 
 from configs.VOCconfig import cfg
 from dataloaders import data
-from dataloaders.MedTData import MedT_Loader
-from metrics.metrics import calc_sensitivity
+
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm
 
 from models.batch_GAIN_VOC import batch_GAIN_VOC
-from PIL import Image
 
 from torch.utils.tensorboard import SummaryWriter
 import datetime
@@ -46,8 +40,8 @@ parser.add_argument('--record_itr_train', type=int, help='each which number of i
 parser.add_argument('--record_itr_test', type=int, help='each which number of iterations to log images in test mode', default=100)
 parser.add_argument('--nrecord', type=int, help='how much images of a batch to record', default=1)
 
-parser.add_argument('--grad_off', type=int, help='how much images of a batch to record', default=0)
-parser.add_argument('--grad_magnitude', type=int, help='how much images of a batch to record', default=1)
+parser.add_argument('--grads_off', type=int, help='how much images of a batch to record', default=0)
+parser.add_argument('--grads_magnitude', type=int, help='how much images of a batch to record', default=1)
 
 
 
@@ -97,7 +91,9 @@ def main(args):
     gain = batch_GAIN_VOC(model=model, grad_layer='features',
                           num_classes=num_classes,
                           pretraining_epochs=args.npretrain,
-                          test_first=test_first)
+                          test_first=test_first,
+                          grads_off=bool(args.grads_off),
+                          grads_magnitude=args.grads_magnitude)
 
     i = 0
     num_train_samples = 0

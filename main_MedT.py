@@ -7,22 +7,17 @@ import torch
 
 from torch import nn
 
-from torchvision.models import vgg19, wide_resnet101_2, mobilenet_v2
+from torchvision.models import mobilenet_v2
 import numpy as np
-import matplotlib.pyplot as plt
-# from torchviz import make_dot
-from sys import maxsize as maxint
-import copy
 
 from torchvision.transforms import Resize, Normalize, ToTensor
 
-from dataloaders import data
-from dataloaders.MedTData2 import MedT_Loader
+
+from dataloaders.MedTData import MedT_Loader
 from metrics.metrics import calc_sensitivity
 
 from models.batch_GAIN_MedT import batch_GAIN_MedT
-from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm, MedT_preprocess_image, \
-    MedT_preprocess_image_v3, MedT_preprocess_image_v4
+from utils.image import show_cam_on_image, denorm, MedT_preprocess_image_v4
 
 
 from torch.utils.tensorboard import SummaryWriter
@@ -48,9 +43,6 @@ def monitor_test_epoch(writer, test_dataset, args, pos_count, test_differences,
                        total_test_single_accuracy, test_total_neg_correct):
     num_test_samples = len(test_dataset)
     print('Average epoch single test accuracy: {:.3f}'.format(total_test_single_accuracy / num_test_samples))
-
-    # epoch_test_multi_accuracy.append(total_test_multi_accuracy / num_test_samples)
-    # print('Average epoch multi test accuracy: {:.3f}'.format(total_test_multi_accuracy / num_test_samples))
 
     writer.add_scalar('Loss/test/am_total_loss', epoch_test_am_loss / (pos_count / args.batchsize), epoch)
 

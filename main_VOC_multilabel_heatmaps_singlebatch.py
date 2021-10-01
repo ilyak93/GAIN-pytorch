@@ -15,7 +15,7 @@ from sys import maxsize as maxint
 from dataloaders import data
 from dataloaders.MedTData import MedT_Loader
 from metrics.metrics import calc_sensitivity
-from models.batch_GAIN_VOC_mutilabel_heatmaps_singlebatch import batch_GAIN_VOC_multiheatmaps
+from models.batch_GAIN_VOC_mutilabel_singlebatch import batch_GAIN_VOC_multiheatmaps
 from utils.image import show_cam_on_image, preprocess_image, deprocess_image, denorm
 
 from models.batch_GAIN_VOC import batch_GAIN_VOC
@@ -37,7 +37,7 @@ parser.add_argument('--checkpoint_file_path_load', type=str, default='', help='a
 parser.add_argument('--checkpoint_file_path_save', type=str, default='', help='a full path including the name of the checkpoint_file to save to, empty otherwise')
 parser.add_argument('--checkpoint_nepoch', type=int, help='each how much to save a checkpoint', default=0)
 parser.add_argument('--workers_num', type=int, help='number of threads for data loading', default=0)
-parser.add_argument('--test_first', type=int, help='0 for not testing before training in the beginning, 1 otherwise', default=1)
+parser.add_argument('--test_first', type=int, help='0 for not testing before training in the beginning, 1 otherwise', default=0)
 parser.add_argument('--cl_loss_factor', type=float, help='a parameter for the classification loss magnitude, constant 1 in the paper', default=1)
 parser.add_argument('--am_loss_factor', type=float, help='a parameter for the AM (Attention-Mining) loss magnitude, alpha in the paper', default=1)
 parser.add_argument('--nepoch', type=int, help='number of epochs to train', default=50)
@@ -48,7 +48,6 @@ parser.add_argument('--record_itr_test', type=int, help='each which number of it
 parser.add_argument('--nrecord', type=int, help='how much images of a batch to record', default=1)
 
 parser.add_argument('--grad_off', type=int, help='how much images of a batch to record', default=0)
-parser.add_argument('--grad_magnitude', type=int, help='how much images of a batch to record', default=1)
 
 def main(args):
     categories = cfg.CATEGORIES
@@ -183,7 +182,7 @@ def main(args):
                 acc = len(set(y_pred).intersection(set(gt))) / num_of_labels
                 total_train_single_accuracy += acc
 
-                if i % 1000 == 0:
+                if i % args.record_itr_train == 0:
                     num_of_labels = len(sample[2][0])
                     for t in range(num_of_labels):
                         one_heatmap = heatmap[t].squeeze().cpu().detach().numpy()
@@ -262,7 +261,7 @@ def main(args):
             acc = len(set(y_pred).intersection(set(gt))) / num_of_labels
             total_test_single_accuracy += acc
 
-            if j % 50 == 0:
+            if j % args.record_itr_test == 0:
                 one_heatmap = heatmap[0].squeeze().cpu().detach().numpy()
                 one_input_image = sample[0][0].cpu().detach().numpy()
                 one_masked_image = masked_image[0].detach().squeeze()

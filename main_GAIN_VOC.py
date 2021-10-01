@@ -93,7 +93,8 @@ def main(args):
                           pretraining_epochs=args.npretrain,
                           test_first=test_first,
                           grads_off=bool(args.grads_off),
-                          grads_magnitude=args.grads_magnitude)
+                          grads_magnitude=args.grads_magnitude,
+                          device=device)
 
     i = 0
     num_train_samples = 0

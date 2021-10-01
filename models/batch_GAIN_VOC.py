@@ -7,8 +7,6 @@ import torch.nn.functional as F
 
 from utils.image import denorm
 
-device_name = 'cpu' # cuda:0
-device = torch.device(device_name)
 
 def is_bn(m):
     return isinstance(m, nn.modules.batchnorm.BatchNorm2d) | isinstance(m, nn.modules.batchnorm.BatchNorm1d)
@@ -43,11 +41,13 @@ class FreezedBnModel(nn.Module):
 
 
 class batch_GAIN_VOC(nn.Module):
-    def __init__(self, model, grad_layer, num_classes, pretraining_epochs=1,
+    def __init__(self, model, grad_layer, device, num_classes, pretraining_epochs=1,
                  test_first=False, grads_off=False, grad_magnitude=1):
         super(batch_GAIN_VOC, self).__init__()
 
         self.model = model
+
+        self.device = device
 
         self.freezed_bn_model = FreezedBnModel(model)
 
@@ -135,7 +135,7 @@ class batch_GAIN_VOC(nn.Module):
 
             if not is_train:
                 pred = F.softmax(logits_cl).argmax(dim=1)
-                labels_ohe = self._to_ohe_multibatch(pred).to(device)
+                labels_ohe = self._to_ohe_multibatch(pred).to(self.device)
             else:
                 if type(labels) is tuple or type(labels) is list:
                     labels_ohe = torch.stack(labels)
@@ -159,7 +159,7 @@ class batch_GAIN_VOC(nn.Module):
         Ac_min, _ = Ac.view(len(images), -1).min(dim=1)
         Ac_max, _ = Ac.view(len(images), -1).max(dim=1)
         import sys
-        eps = torch.tensor(sys.float_info.epsilon).to(device)
+        eps = torch.tensor(sys.float_info.epsilon).to(self.device)
         scaled_ac = (Ac - Ac_min.view(-1, 1, 1, 1)) / \
                     (Ac_max.view(-1, 1, 1, 1) - Ac_min.view(-1, 1, 1, 1)
                      + eps.view(1, 1, 1, 1))

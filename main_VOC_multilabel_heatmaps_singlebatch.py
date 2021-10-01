@@ -88,7 +88,8 @@ def main(args):
     gain = batch_GAIN_VOC_multiheatmaps(model=model, grad_layer='features',
                           num_classes=num_classes,
                           pretraining_epochs=args.npretrain,
-                          test_first=test_first)
+                          test_first=test_first,
+                          device=device)
 
     i = 0
     num_train_samples = 0

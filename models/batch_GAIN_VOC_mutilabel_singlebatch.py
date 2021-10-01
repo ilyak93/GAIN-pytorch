@@ -44,7 +44,7 @@ class FreezedBnModel(nn.Module):
 
 
 class batch_GAIN_VOC_multiheatmaps(nn.Module):
-    def __init__(self, model, grad_layer, num_classes, pretraining_epochs=1, test_first_before_train=False):
+    def __init__(self, model, grad_layer, num_classes, pretraining_epochs=1, test_first=False):
         super(batch_GAIN_VOC_multiheatmaps, self).__init__()
 
         self.model = model
@@ -70,7 +70,7 @@ class batch_GAIN_VOC_multiheatmaps(nn.Module):
 
         self.pretraining_epochs = pretraining_epochs
         self.cur_epoch = 0
-        if test_first_before_train == True:
+        if test_first == True:
             self.cur_epoch = -1
         self.enable_am = False
         if self.pretraining_epochs == 0:

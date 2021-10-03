@@ -153,11 +153,8 @@ def main(args):
 
                 labels = sample[2]
 
-                print('here01')
-                
+
                 logits_cl, logits_am, heatmap, masked_image, mask = gain(batch, sample[1])
-                
-                print('here02')
 
                 class_onehot = torch.stack(sample[1]).float()
 
@@ -191,17 +188,10 @@ def main(args):
                 loss = cl_loss * cl_factor
                 if gain.AM_enabled():
                     loss += am_loss * am_factor
-                    
-                print('here1')
 
                 loss.backward()
-                
-                print('here2')
-                
                 optimizer.step()
-                
-                print('here3')
-                
+
                 # Single label evaluation
                 for k in range(len(batch)):
                     num_of_labels = len(sample[2][k])

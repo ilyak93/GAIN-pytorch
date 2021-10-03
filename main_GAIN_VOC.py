@@ -40,8 +40,13 @@ parser.add_argument('--record_itr_train', type=int, help='each which number of i
 parser.add_argument('--record_itr_test', type=int, help='each which number of iterations to log images in test mode', default=100)
 parser.add_argument('--nrecord', type=int, help='how much images of a batch to record', default=1)
 
-parser.add_argument('--grads_off', type=int, help='how much images of a batch to record', default=0)
-parser.add_argument('--grads_magnitude', type=int, help='how much images of a batch to record', default=1)
+parser.add_argument('--grads_off', type=int, default=0, help='mode: \
+                with gradients (as in the paper) or without \
+                (a novel approach of ours)')
+parser.add_argument('--grads_magnitude', type=int, default=1, 
+                help='mode with gradients: set the magnitude of the \
+                backpropogated gradients (default 1 as in the paper, \
+                otherwise as a hyperparameter to play with)')
 
 
 

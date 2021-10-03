@@ -72,8 +72,6 @@ def main(args):
     mean = cfg.MEAN
     std = cfg.STD
     
-    print(1)
-
     batch_size_dict = {'train': batch_size, 'test': batch_size}
     rds = data.RawDataset(root_dir=args.dataset_path,
                           num_workers=args.workers_num,
@@ -113,8 +111,8 @@ def main(args):
     writer = SummaryWriter(
         args.logging_path + args.logging_name + '_' +
                 datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
-
-    print(2)
+                
+    writer.add_text('Start')
 
 
     for epoch in range(chkpnt_epoch, epochs):

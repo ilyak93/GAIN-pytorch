@@ -112,7 +112,7 @@ def main(args):
         args.logging_path + args.logging_name + '_' +
                 datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
                 
-    writer.add_text('Start')
+    writer.add_text('Start', 'start')
 
 
     for epoch in range(chkpnt_epoch, epochs):

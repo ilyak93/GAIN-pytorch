@@ -71,6 +71,8 @@ def main(args):
     #use values to normiulize the input as in torchvision ImageNet guide
     mean = cfg.MEAN
     std = cfg.STD
+    
+    print(1)
 
     batch_size_dict = {'train': batch_size, 'test': batch_size}
     rds = data.RawDataset(root_dir=args.dataset_path,
@@ -112,7 +114,7 @@ def main(args):
         args.logging_path + args.logging_name + '_' +
                 datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
 
-
+    print(2)
 
 
     for epoch in range(chkpnt_epoch, epochs):

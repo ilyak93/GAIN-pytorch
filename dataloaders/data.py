@@ -5,7 +5,7 @@ from torch.utils.data import Dataset, Subset
 from dataloaders.pascal_voc_loader import PascalVOCLoader
 from torch.utils.data.sampler import SubsetRandomSampler, SequentialSampler
 
-device_name = 'cpu' # cuda:0
+device_name = 'cuda:0'
 device = torch.device(device_name)
 
 def my_collate(batch):

@@ -113,6 +113,8 @@ def main(args):
                 datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
                 
     writer.add_text('Start', 'start')
+    
+    print('Started')
 
 
     for epoch in range(chkpnt_epoch, epochs):

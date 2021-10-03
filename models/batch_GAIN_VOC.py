@@ -57,9 +57,9 @@ class batch_GAIN_VOC(nn.Module):
         self.num_classes = num_classes
 
         self.grads_off = grads_off
-        self.grad_magnitude = grads_magnitude
+        self.grads_magnitude = grads_magnitude
         if grads_off:
-            self.grad_magnitude = 1
+            self.grads_magnitude = 1
 
         # Feed-forward features
         self.feed_forward_features = None

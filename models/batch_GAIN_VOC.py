@@ -166,19 +166,19 @@ class batch_GAIN_VOC(nn.Module):
         mask = F.sigmoid(self.omega * (scaled_ac - self.sigma))
         masked_image = images - images * mask
         
-        masked_image.register_hook(lambda grad: grad * self.grad_magnitude)
+        #masked_image.register_hook(lambda grad: grad * self.grad_magnitude)
 
-        if self.grads_off:
-            for param in self.model.parameters():
-                param.requires_grad = False
+        #if self.grads_off:
+        #    for param in self.model.parameters():
+        #        param.requires_grad = False
 
         logits_am = self.freezed_bn_model(masked_image)
 
-        if self.grads_off:
-            for param in self.model.parameters():
-                param.requires_grad = True
+        #if self.grads_off:
+        #    for param in self.model.parameters():
+        #        param.requires_grad = True
         
-        masked_image.register_hook(lambda grad: grad / self.grad_magnitude)
+        #masked_image.register_hook(lambda grad: grad / self.grad_magnitude)
 
         return logits_cl, logits_am, heatmap, masked_image, mask
 

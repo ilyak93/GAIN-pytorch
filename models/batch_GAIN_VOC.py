@@ -42,7 +42,7 @@ class FreezedBnModel(nn.Module):
 
 class batch_GAIN_VOC(nn.Module):
     def __init__(self, model, grad_layer, device, num_classes, pretraining_epochs=1,
-                 test_first=False, grads_off=False, grad_magnitude=1):
+                 test_first=False, grads_off=False, grads_magnitude=1):
         super(batch_GAIN_VOC, self).__init__()
 
         self.model = model
@@ -57,7 +57,7 @@ class batch_GAIN_VOC(nn.Module):
         self.num_classes = num_classes
 
         self.grads_off = grads_off
-        self.grad_magnitude = grad_magnitude
+        self.grad_magnitude = grads_magnitude
         if grads_off:
             self.grad_magnitude = 1
 

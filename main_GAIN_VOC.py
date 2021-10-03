@@ -155,8 +155,8 @@ def main(args):
 
 
                 logits_cl, logits_am, heatmap, masked_image, mask = gain(batch, sample[1])
-				
-				print('here')
+                
+                print('here')
 
                 class_onehot = torch.stack(sample[1]).float()
 

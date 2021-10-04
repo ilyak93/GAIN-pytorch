@@ -21,7 +21,7 @@ import datetime
 # Parse all the input argument
 parser = argparse.ArgumentParser(description='PyTorch GAIN Training')
 parser.add_argument('--device', type=str, help='device:ID', default='cpu') #for gpu use the string format of 'cuda:#', e.g: cuda:0
-parser.add_argument('--batch_size', type=int, help='batch size', default='8')
+parser.add_argument('--batch_size', type=int, help='batch size', default='1')
 parser.add_argument('--epoch_size', type=int, help='number of iterations per epoch', default='6000')
 parser.add_argument('--dataset_path', type=str, help='the path to your local VOC 2012 dataset directory')
 parser.add_argument('--logging_path', type=str, help='the path to your local logging directory') #recommended a big enough storage for many runs

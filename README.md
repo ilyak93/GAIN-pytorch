@@ -112,5 +112,5 @@ See the use-case.
 Link : <a href="https://www.cs.technion.ac.il/~cs234313/projects_sites/S21/07/site/">Using GAIN to improve endoscopy classification results with localization</a>
 
 ## Try it on with the VOC 2012 dataset ##
-download the VOC 2012 datset from <a href="http://host.robots.ox.ac.uk:8080/pascal/VOC/voc2012/index.html">here</a> 
+download the VOC 2012 datset from <a href="https://drive.google.com/drive/folders/1N5vE0AYFcim2TYPNZ6DStYxhVItODwBr">here</a> 
 and work with <a href="https://github.com/ilyak93/GAIN-pytorch/blob/main/main_GAIN_VOC.py">main_GAIN_VOC.py</a>

@@ -15,6 +15,7 @@ def take_bn_layers(model):
     for m in model.modules():
         if is_bn(m):
             yield m
+    return []
 
 class FreezedBnModel(nn.Module):
     def __init__(self, model, is_train=True):
@@ -168,15 +169,15 @@ class batch_GAIN_VOC(nn.Module):
         
         #masked_image.register_hook(lambda grad: grad * self.grad_magnitude)
 
-        #if self.grads_off:
-        #    for param in self.model.parameters():
-        #        param.requires_grad = False
+        if self.grads_off:
+            for param in self.model.parameters():
+                param.requires_grad = False
 
         logits_am = self.freezed_bn_model(masked_image)
 
-        #if self.grads_off:
-        #    for param in self.model.parameters():
-        #        param.requires_grad = True
+        if self.grads_off:
+            for param in self.model.parameters():
+                param.requires_grad = True
         
         #masked_image.register_hook(lambda grad: grad / self.grad_magnitude)
 

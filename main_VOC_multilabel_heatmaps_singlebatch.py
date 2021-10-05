@@ -47,7 +47,9 @@ parser.add_argument('--record_itr_train', type=int, help='each which number of i
 parser.add_argument('--record_itr_test', type=int, help='each which number of iterations to log images in test mode', default=100)
 parser.add_argument('--nrecord', type=int, help='how much images of a batch to record', default=1)
 
-parser.add_argument('--grad_off', type=int, help='how much images of a batch to record', default=0)
+parser.add_argument('--grads_off', type=int, default=0, help='mode: \
+                with gradients (as in the paper) or without \
+                (a novel approach of ours)')
 
 def main(args):
     categories = cfg.CATEGORIES
@@ -89,6 +91,7 @@ def main(args):
                           num_classes=num_classes,
                           pretraining_epochs=args.npretrain,
                           test_first=test_first,
+                          grads_off=bool(args.grads_off),
                           device=device)
 
     i = 0
@@ -157,7 +160,7 @@ def main(args):
                     batch_am_labels_scores.append(am_labels_scores)
 
                 num_of_labels = len(sample[2][0])
-                am_loss = sum(batch_am_labels_scores) #/ num_of_labels
+                am_loss = sum(batch_am_labels_scores) / num_of_labels
 
                 total_loss = num_of_labels * cl_loss * cl_factor + am_loss * am_factor
 

@@ -108,7 +108,7 @@ Attention Maps visualizations descreptions & additional info:
 
 See the use-case.
 
-## Use case in an Industrial & Academic Prsoject ##
+## Use case in an Industrial & Academic Project ##
 Link : <a href="https://www.cs.technion.ac.il/~cs234313/projects_sites/S21/07/site/">Using GAIN to improve endoscopy classification results with localization</a>
 
 ## Try it on with the VOC 2012 dataset ##

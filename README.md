@@ -1,6 +1,8 @@
 
 # Guided-Attention-Inference-Network (GAIN)#
 
+![image](https://user-images.githubusercontent.com/50303550/136835409-81275524-73ea-4e05-bb0c-06611b617eac.png)
+
 ## Introduction ##
 
 This is a Pytorch implementation of the GAIN algorithm presented in the following paper ([paper CVPR2018](https://arxiv.org/abs/1802.10171)):

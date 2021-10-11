@@ -91,7 +91,19 @@ running the main scripts:
 --nrecord: how much images of a batch to record (second approach only) <br/>
 --grads_off: with gradients (as in the paper) or without novel approach of ours (see more details below). <br/>
 --grads_magnitude: mode with gradients - set the magnitude of the backpropogated gradients 
-  (default 1 as in the paper, otherwise as a hyperparameter to play with) * second approach only
+  (default 1 as in the paper, otherwise as a hyperparameter to play with) * second approach only <br/>
+  
+  All the parameters set to default values with which the following results were obtained. For initial run you can change only the parameters of the paths as in the running command.
+  
+## Results ##  
+
+The paper presents the following results for baseline and AM training:
+![image](https://user-images.githubusercontent.com/50303550/136830047-25e208e5-fd0a-4012-b077-7d8141c4298e.png)
+
+  
+For the first approach the results of the baseline training (all epochs without training AM loss, such that it is regular classification with just GradCAM vizualisations),
+gradients on training (first 5 training epochs only classification training, 5 and further with AM loss training) and gradients off training (same as previous) the results we've got are:
+![image](https://user-images.githubusercontent.com/50303550/136829932-ec599840-0660-486d-a16a-33b64c3c2f7a.png)
 
 
 

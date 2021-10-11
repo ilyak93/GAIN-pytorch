@@ -28,7 +28,7 @@ In general, you can use the code for any purpose with proper attribution. If you
 
 Ensure on PyTorch & NVdidia websites you have the appropriate CUDA drivers and Cudnn version.
 
-## Paper implementation, key issues and results ##
+## Paper implementation, run instructions, key issues and results ##
 In our experiments on VOC 2012 dataset (the dataset mentioned in the paper) we implement only the Attention-Mining part.
 ![image](https://user-images.githubusercontent.com/50303550/136822833-933c235c-a6e4-44a5-87ac-12263fb0c218.png)
 

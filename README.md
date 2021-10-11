@@ -97,7 +97,7 @@ running the main scripts:
   
 ## Results ##  
 
-The paper presents the following results for baseline and AM training:
+The paper presents the following results for baseline and AM training: </br>
 ![image](https://user-images.githubusercontent.com/50303550/136830047-25e208e5-fd0a-4012-b077-7d8141c4298e.png)
 
   

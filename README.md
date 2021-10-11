@@ -69,9 +69,10 @@ download the VOC 2012 datset from <a href="https://drive.google.com/drive/folder
 You need approximately 3+ GB of free space. <br>
 Put it whereever you like on your Gdrive. <br>
 Then use the [GAIN notebook](https://github.com/ilyak93/GAIN-pytorch/blob/main/GAIN_notebook_4collab.ipynb), put it on your collab. <br>
-You can fork or clone our repository and then change the path or just use it as is. Dont forget to restart as it says after installing all the requirements. <br>
+You can fork or clone our repository and then change the path or just use it as is.
+<br> Dont forget to restart as it says after installing all the requirements. <br>
 Run the main script of two mentioned above with the needed parameters (descreption below). Choose the pathes for tensorboard logging, checkpoints and e.t.c if you like. <br>
-We recommend you to synchronize your local storage with Google Drive and then view tensorboard locally, if the3 extension doesnt work from Collab (which can happen). <br>
+We recommend you to synchronize your local storage with Google Drive and then view tensorboard locally, if the tensorboard extension doesnt work from Collab (which can happen). <br>
 
 running the main scripts:
 ```

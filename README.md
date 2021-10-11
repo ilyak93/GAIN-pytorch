@@ -220,10 +220,10 @@ Choose any port you would like, if you erase this parameter it will choose the f
 
 A few examples of current monitoring format.
 
-Loss & ROC & IOU & Accuracy monitoring (pretty much as expected):
+Loss & ROC & IOU & Accuracy monitoring (pretty much as expected):<br>
 <a href="https://ibb.co/z47rPfR"><img src="https://i.ibb.co/DR8twKC/Num.jpg" alt="Num" border="0"></a>
 
-Attention Maps visualizations:
+Attention Maps visualizations:<br>
 <a href="https://ibb.co/z47rPfR"><img src="https://i.ibb.co/DR8twKC/Num.jpg" alt="Num" border="0"></a>
 
 <a href="https://ibb.co/ySJp0mm"><img src="https://i.ibb.co/ZmCSdRR/viz3.jpg" alt="viz3" border="0"></a>

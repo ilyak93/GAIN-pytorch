@@ -78,19 +78,19 @@ running the main scripts:
 --logging_name: change to your local/Gdrive tensorboard logging directory name<br/>
 --checkpoint_file_path_load: change to your local/Gdrive tensorboard checkpoint file full path <br/>
 --checkpoint_file_path_save:  change to your local/Gdrive tensorboard checkpoint saving directory full path + name <br/>
---checkpoint_nepoch: each which number of epochs you want to checkpoint
---workers_num: choose number of threads the dataloader will use (2 is preferable for each computing core)
---test_first: set 1 if you want to run first the model on the test set before training
---cl_loss_factor: set classification loss weight (adjustable as in the paper)
---am_loss_factor: set attention-mining loss weight (adjustable as in the paper)
---nepoch: total number of epochs to train and test
---lr: initial learning rate, 0.00001 recommended as a start point for batch size 1, 0.0001 for batch size greater then 1 (for the second approach main script)
---npretrain: number of epochs to pretrain before using AM
---record_itr_train: each which number of iterations to log images in training mode
---record_itr_test: each which number of iterations to log images in test mode
---nrecord: how much images of a batch to record (second approach only)
---grads_off: with gradients (as in the paper) or without novel approach of ours (see more details below).
---grads_magnitude: mode with gradients - set the magnitude of the backpropogated gradients \
+--checkpoint_nepoch: each which number of epochs you want to checkpoint <br/>
+--workers_num: choose number of threads the dataloader will use (2 is preferable for each computing core) <br/>
+--test_first: set 1 if you want to run first the model on the test set before training <br/>
+--cl_loss_factor: set classification loss weight (adjustable as in the paper) <br/>
+--am_loss_factor: set attention-mining loss weight (adjustable as in the paper) <br/>
+--nepoch: total number of epochs to train and test <br/>
+--lr: initial learning rate, 0.00001 recommended as a start point for batch size 1, 0.0001 for batch size greater then 1 (for the second approach main script) <br/>
+--npretrain: number of epochs to pretrain before using AM <br/>
+--record_itr_train: each which number of iterations to log images in training mode <br/>
+--record_itr_test: each which number of iterations to log images in test mode <br/>
+--nrecord: how much images of a batch to record (second approach only) <br/>
+--grads_off: with gradients (as in the paper) or without novel approach of ours (see more details below). <br/>
+--grads_magnitude: mode with gradients - set the magnitude of the backpropogated gradients 
   (default 1 as in the paper, otherwise as a hyperparameter to play with) * second approach only
 
 

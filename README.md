@@ -126,7 +126,11 @@ Baseline heatmaps:
 ![image](https://user-images.githubusercontent.com/50303550/136831834-cb7ce515-bbaf-46c9-a98e-4add97bb95f7.png)
 
 AM-training heatmaps with gradients on:
+![image](https://user-images.githubusercontent.com/50303550/136832329-db100ba5-6036-4ad7-80b6-aadb44ce2d28.png)
 
+![image](https://user-images.githubusercontent.com/50303550/136832398-185c1f2a-bdcb-434a-80b8-ee8da3b65c1c.png)
+
+![image](https://user-images.githubusercontent.com/50303550/136832484-6e10e4d8-d6cb-4ae7-a252-27bc58b629f9.png)
 
 AM-training heatmaps with gradients off:
 

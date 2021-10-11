@@ -142,7 +142,7 @@ AM-training heatmaps with gradients off:
 The paper presented the following results: </br>
 ![image](https://user-images.githubusercontent.com/50303550/136832967-9f28b3d5-80bc-4c43-909b-b0736af5da89.png)
 
-Which is much more similiar to the results with the gradients set off, bu the paper also wrote about an improvement
+Which is much more similiar to the results with the gradients set off, but the paper also wrote about an improvement
 in accuracy, a result which we weren't not able to reproduce.
 
 The Quantative results of the second approach are:

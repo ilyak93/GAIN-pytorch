@@ -156,7 +156,7 @@ From which we can see pretty much the same behavior as from the first approach.
 The heatmaps are pretty much alike.
 
 
-You can download and look at the full logs from [here](https://drive.google.com/drive/folders/1ZwJmjaUkah_9Q041t1KFYHEFp0z3cMse)
+You can download and look at the full logs from [here](https://drive.google.com/drive/folders/1ZwJmjaUkah_9Q041t1KFYHEFp0z3cMse).
 
 
 ## Run the script on Medtronic endoscopy dataset ##

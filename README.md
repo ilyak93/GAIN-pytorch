@@ -103,6 +103,7 @@ running the main scripts:
 
 * Gradients on/off issue (see results for reasoning and conclusions):
 ![image](https://user-images.githubusercontent.com/50303550/136836333-e6756176-0e7a-42f8-a436-a1d0f7233db3.png)
+For details see the discussion in the use case. 
 
   
 ## Results ##  

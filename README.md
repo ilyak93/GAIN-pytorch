@@ -100,6 +100,11 @@ running the main scripts:
   
   All the parameters set to default values with which the following results were obtained. For initial run you can change only the parameters of the paths as in the running command.
   
+
+* Gradients on/off issue (see results for reasoning and conclusions):
+![image](https://user-images.githubusercontent.com/50303550/136836260-eabfb8da-de32-4058-8989-5d019c0ca2ca.png)
+
+  
 ## Results ##  
 
 The paper presents the following results for baseline and AM training: </br>

@@ -35,7 +35,7 @@ In our experiments on VOC 2012 dataset (the dataset mentioned in the paper) we i
 We implement 5th formula in two ways as the paper doesn't present concrete methodology & implementations details:
 ![image](https://user-images.githubusercontent.com/50303550/136823043-52df3d1c-e602-4db6-80f1-e6e760bcde87.png)
 
-we also use [AutoAugment](https://arxiv.org/abs/1805.09501) CIFAR10 tecnique implemented by [torchvision](https://pytorch.org/vision/stable/transforms.html?highlight=autoaugment#torchvision.transforms.AutoAugment)
+we also use [AutoAugment](https://arxiv.org/abs/1805.09501) with CIFAR10 policy implemented by [torchvision](https://pytorch.org/vision/stable/transforms.html?highlight=autoaugment#torchvision.transforms.AutoAugment)
 
 
 The first way can be seen in a more authentic and corresponding approach to the paper (in our opinion):

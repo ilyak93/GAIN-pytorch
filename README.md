@@ -35,6 +35,9 @@ In our experiments on VOC 2012 dataset (the dataset mentioned in the paper) we i
 We implement 5th formula in two ways as the paper doesn't present concrete methodology & implementations details:
 ![image](https://user-images.githubusercontent.com/50303550/136823043-52df3d1c-e602-4db6-80f1-e6e760bcde87.png)
 
+we also use [AutoAugment](https://arxiv.org/abs/1805.09501) CIFAR10 tecnique implemented by [torchvision](https://pytorch.org/vision/stable/transforms.html?highlight=autoaugment#torchvision.transforms.AutoAugment)
+
+
 The first way can be seen in a more authentic and corresponding approach to the paper (in our opinion):
 For each of the labels we compute a separate masked image, thus for example if an image has 3 labels, we compute 3 masked images,
 (3 heatmaps, 3 masks and e.t.c) and the loss for that image will be the average of their scores after forwarding them.
@@ -104,6 +107,30 @@ The paper presents the following results for baseline and AM training: </br>
 For the first approach the results of the baseline training (all epochs without training AM loss, such that it is regular classification with just GradCAM vizualisations),
 gradients on training (first 5 training epochs only classification training, 5 and further with AM loss training) and gradients off training (same as previous) the results we've got are:
 ![image](https://user-images.githubusercontent.com/50303550/136829932-ec599840-0660-486d-a16a-33b64c3c2f7a.png)
+</br>
+Thus we've got no significant imporvement with using AM-loss, moreover with just classification we've obtained more then 90%, althought
+the paper results achieve only 80% in similiar case. 
+
+The heatmaps also show no significant change training with AM-loss and without it when the gradients set on (most likely as it is in the paper,
+as the paper doesn't present any other issues on the the gradients backward technique and e.t.c).
+There are much more effect on the heatmaps when the gradients are off, although as it can be seen from the graph,
+the accuracy droped significantly.
+
+Some examples:
+
+Baseline heatmaps:
+![image](https://user-images.githubusercontent.com/50303550/136831639-cffa27f0-a317-4d15-a85e-370942966f89.png)
+
+![image](https://user-images.githubusercontent.com/50303550/136831780-9f6d344b-ad35-4229-bf66-60d9d3c135c9.png)
+
+![image](https://user-images.githubusercontent.com/50303550/136831834-cb7ce515-bbaf-46c9-a98e-4add97bb95f7.png)
+
+AM-training heatmaps with gradients on:
+
+
+AM-training heatmaps with gradients off:
+
+
 
 
 

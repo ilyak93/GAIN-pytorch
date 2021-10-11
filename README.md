@@ -133,6 +133,25 @@ AM-training heatmaps with gradients on:
 ![image](https://user-images.githubusercontent.com/50303550/136832484-6e10e4d8-d6cb-4ae7-a252-27bc58b629f9.png)
 
 AM-training heatmaps with gradients off:
+![image](https://user-images.githubusercontent.com/50303550/136832650-5c174fec-60ad-4f27-9deb-c7be647cbebc.png)
+
+![image](https://user-images.githubusercontent.com/50303550/136832763-f1bd1d67-3f7a-4bee-9acf-5be9a26d20bb.png)
+
+![image](https://user-images.githubusercontent.com/50303550/136832865-10a1f3f1-0045-48eb-8134-d8ff29e2b7ba.png)
+
+The paper presented the following results:
+![image](https://user-images.githubusercontent.com/50303550/136832967-9f28b3d5-80bc-4c43-909b-b0736af5da89.png)
+
+Which is much more similiar to the results with the gradients set off, bu the paper also wrote about an improvement
+in accuracy, a result which we weren't not able to reproduce.
+
+The Quantative results of the second approach are:
+
+![image](https://user-images.githubusercontent.com/50303550/136833623-60a55f07-7681-4de4-8bbc-9c64edff5f32.png)
+
+From which we can see pretty much the same behavior as from the first approach.
+
+The heatmaps are pretty much alike.
 
 
 

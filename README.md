@@ -28,10 +28,12 @@ In general, you can use the code for any purpose with proper attribution. If you
 * [Pytorch](http://pytorch.org/) >= v1.8.1
 * [Tensorboard](https://www.tensorflow.org/tensorboard) >= v2.5.0
 
-Ensure on PyTorch & NVdidia websites you have the appropriate CUDA drivers and Cudnn version.
+Ensure on PyTorch & NVidia websites you have the appropriate CUDA drivers and Cudnn version.
 
 ## Paper implementation, run instructions, key issues and results ##
 In our experiments on VOC 2012 dataset (the dataset mentioned in the paper) we implement only the Attention-Mining part.
+For the extra-supervision part, you can see the code used for the Medtronic dataset and get inspired by it,
+this part is simplier and will be very similiar (just a pixel-wise sqeared error between the original mask and the returned from the model).
 ![image](https://user-images.githubusercontent.com/50303550/136822833-933c235c-a6e4-44a5-87ac-12263fb0c218.png)
 
 We implement 5th formula in two ways as the paper doesn't present concrete methodology & implementations details:

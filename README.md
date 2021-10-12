@@ -250,3 +250,5 @@ See the use-case.
 
 ## Use case in an Industrial & Academic Project ##
 Link : <a href="https://www.cs.technion.ac.il/~cs234313/projects_sites/S21/07/site/">Using GAIN to improve endoscopy classification results with localization</a>
+
+ [@Ilya Kotlov](https://www.linkedin.com/in/ilyak93/)

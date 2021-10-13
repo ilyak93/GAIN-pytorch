@@ -134,8 +134,6 @@ def main(args):
             epoch_train_total_loss = 0
 
             for sample in rds.datasets['rnd_train']:
-                if 2 in sample[2][0] or 3 in sample[2][0]:
-                    continue 
                 augmented_batch = []
                 batch, augmented = preprocess_image(sample[0][0].squeeze().cpu().detach().numpy(), train=True, mean=mean, std=std)
                 augmented_batch.append(augmented)
@@ -245,13 +243,9 @@ def main(args):
 
         model.train(False)
         j = 0
-        num_test_samples = 0
+
         for sample in rds.datasets['seq_test']:
-        
-            if 2 in sample[2][0] or 3 in sample[2][0]:
-                continue 
-            if epoch == 0:
-                num_test_samples = num_test_samples + 1
+
             batch, _ = preprocess_image(sample[0][0].squeeze().cpu().detach().numpy(), train=False, mean=mean, std=std)
             for img in sample[0][1:]:
                 input_tensor, input_image = preprocess_image(img.squeeze().cpu().detach().numpy(), train=False,
@@ -320,8 +314,7 @@ def main(args):
 
             j += 1
 
-        #num_test_samples = len(rds.datasets['seq_test'])*batch_size
-        
+        num_test_samples = len(rds.datasets['seq_test'])*batch_size
 
         if len(args.checkpoint_file_path_save) > 0 and epoch % args.checkpoint_nepoch == 0:
             torch.save({

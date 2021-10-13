@@ -134,7 +134,7 @@ def main(args):
             epoch_train_total_loss = 0
 
             for sample in rds.datasets['rnd_train']:
-                if [2] in sample[2] or [3] in sample[2]:
+                if 2 in sample[2][0] or 3 in sample[2][0]:
                     continue 
                 augmented_batch = []
                 batch, augmented = preprocess_image(sample[0][0].squeeze().cpu().detach().numpy(), train=True, mean=mean, std=std)
@@ -248,7 +248,7 @@ def main(args):
         num_test_samples = 0
         for sample in rds.datasets['seq_test']:
         
-            if [2] in sample[2] or [3] in sample[2]:
+            if 2 in sample[2][0] or 3 in sample[2][0]:
                 continue 
             if epoch == 0:
                 num_test_samples = num_test_samples + 1
